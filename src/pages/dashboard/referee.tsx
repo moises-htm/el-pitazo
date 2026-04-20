@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAuthStore } from "../stores/auth";
-import { Whistle, Clock, MapPin, DollarSign, ClipboardList, TrendingUp } from "lucide-react";
+import { useAuthStore } from "@/lib/auth";
+import { Gavel, Clock, MapPin, DollarSign, ClipboardList, TrendingUp } from "lucide-react";
 
 export default function RefereeDashboard() {
   const { user } = useAuthStore();

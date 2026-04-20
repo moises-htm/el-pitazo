@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuthStore } from "../stores/auth";
+import { useAuthStore } from "@/lib/auth";
 import { Trophy, Search, MapPin, DollarSign, ArrowRight, Star, Clock } from "lucide-react";
 
 export default function PlayerDashboard() {

@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useAuthStore } from "../stores/auth";
-import { TournamentCreate } from "../components/tournament-create";
-import { TeamList } from "../components/team-list";
-import { BracketView } from "../components/bracket-view";
-import { FinancialDashboard } from "../components/financial-dashboard";
+import { useAuthStore } from "@/lib/auth";
+import { TournamentCreate } from "@/components/tournament-create";
+import { TeamList } from "@/components/team-list";
+import { BracketView } from "@/components/bracket-view";
+import { FinancialDashboard } from "@/components/financial-dashboard";
 import { Users, Trophy, DollarSign, ClipboardList, BarChart3 } from "lucide-react";
 
 export default function OrganizerDashboard() {

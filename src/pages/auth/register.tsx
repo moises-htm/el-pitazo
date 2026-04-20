@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { useAuthStore } from "../stores/auth";
+import { useAuthStore } from "@/lib/auth";
 import { ArrowLeft } from "lucide-react";
 
 export default function RegisterPage() {
@@ -19,7 +19,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) return setError("Las contraseñas no coinciden");
     if (form.password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres");
@@ -29,9 +29,9 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     try {
-      await register(form);
+      await register(form as any);
       router.push("/dashboard");
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || "Error al registrarse");
     } finally {
       setLoading(false);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuthStore } from "../stores/auth";
+import { useAuthStore } from "@/lib/auth";
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
 
 export function TournamentCreate() {

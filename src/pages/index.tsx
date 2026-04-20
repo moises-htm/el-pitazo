@@ -1,73 +1,112 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { Trophy, User, ArrowRight, FcFootball } from "lucide-react";
+import { Trophy, User, ArrowRight, Volleyball as Football } from "lucide-react";
 import { toast } from "sonner";
 
-export default function WelcomeScreen() {
+export default function HomePage() {
   const router = useRouter();
-  const [selected, setSelected] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
 
-  const roles = [
-    { id: "PLAYER", icon: "⚽", label: "Jugador", desc: "Explorar torneos, inscribirme, ver resultados" },
-    { id: "REFEREE", icon: "🟨", label: "Árbitro", desc: "Arbitrar partidos, anotar en vivo" },
-    { id: "ORGANIZER", icon: "👔", label: "Organizador", desc: "Crear torneos, cobrar, gestionar equipos" },
+  const features = [
+    {
+      icon: "⚽",
+      title: "Gestión Completa",
+      desc: "Crea torneos, gestiona equipos, emparejamientos y resultados en tiempo real",
+    },
+    {
+      icon: "💳",
+      title: "Pagos LATAM",
+      desc: "SPEI, Oxxo, MercadoPago y Stripe — los métodos que tus jugadores necesitan",
+    },
+    {
+      icon: "📊",
+      title: "Panel por Rol",
+      desc: "Vistas personalizadas para jugadores, árbitros y organizadores",
+    },
+    {
+      icon: "🔄",
+      title: "Tiempo Real",
+      desc: "Resultados, estadísticas y actualizaciones instantáneas vía WebSocket",
+    },
   ];
 
-  const handleRoleSelect = (role) => {
-    setSelected(role);
-    router.push(`/auth/register?role=${role}`);
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-950 flex items-center justify-center p-4">
-      <div className="max-w-lg w-full">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/20 mb-4">
-            <FcFootball size={48} />
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-emerald-950 text-white">
+      {/* Hero */}
+      <div className="max-w-7xl mx-auto px-4 py-20">
+        <div className="text-center mb-16">
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <Football size={48} className="text-emerald-400" />
+            <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400 bg-clip-text text-transparent">
+              El Pitazo
+            </h1>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-1">El Pitazo</h1>
-          <p className="text-blue-300 text-lg">La app que organiza tu torneo</p>
-        </div>
-
-        {/* Role selector */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
-          <h2 className="text-white text-lg font-semibold mb-2">¿Cómo quieres usar El Pitazo?</h2>
-          <p className="text-gray-400 text-sm mb-5">Selecciona tu rol para comenzar</p>
-
-          <div className="space-y-3">
-            {roles.map((role) => (
-              <button
-                key={role.id}
-                onClick={() => handleRoleSelect(role.id)}
-                className="w-full flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-blue-500/50 transition-all text-left group"
-              >
-                <div className="text-3xl">{role.icon}</div>
-                <div className="flex-1">
-                  <div className="text-white font-semibold">{role.label}</div>
-                  <div className="text-gray-400 text-sm">{role.desc}</div>
-                </div>
-                <ArrowRight className="text-gray-600 group-hover:text-blue-400 transition-colors" />
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-6 text-center">
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-10">
+            La plataforma completa para torneos de fútbol amateur en Latinoamérica
+          </p>
+          <div className="flex gap-4 justify-center">
             <button
-              onClick={() => setShowLogin(!showLogin)}
-              className="text-blue-400 hover:text-blue-300 text-sm underline"
+              onClick={() => setShowLogin(true)}
+              className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-semibold transition-colors"
             >
-              Ya tengo cuenta — Iniciar Sesión
+              {showLogin ? "Iniciar Sesión" : "Registrarse"}
+            </button>
+            <button
+              onClick={() => router.push("/auth/login")}
+              className="px-8 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold transition-colors"
+            >
+              Ya tengo cuenta
             </button>
           </div>
         </div>
 
-        {/* Trust indicators */}
-        <div className="flex items-center justify-center gap-6 mt-6 text-gray-500 text-xs">
-          <span>🔒 Pagos seguros</span>
-          <span>⚡ Tiempos real</span>
-          <span>🇲🇽 LATAM</span>
+        {/* Features */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className="p-6 bg-gray-900/50 backdrop-blur rounded-2xl border border-gray-800 hover:border-emerald-500/50 transition-colors"
+            >
+              <div className="text-4xl mb-4">{f.icon}</div>
+              <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
+              <p className="text-gray-400 text-sm">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Roles */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Para cada rol</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          {[
+            { role: "Jugador", icon: "🏃", desc: "Únete a torneos, revisa resultados y estadísticas" },
+            { role: "Árbitro", icon: "🟨", desc: "Gestiona partidos, envía reportes y cobra por juego" },
+            { role: "Organizador", icon: "👔", desc: "Crea torneos, gestiona equipos y finanzas" },
+          ].map((r) => (
+            <div
+              key={r.role}
+              className="p-8 bg-gradient-to-br from-gray-900/80 to-gray-800/40 rounded-2xl border border-gray-800"
+            >
+              <div className="text-5xl mb-4">{r.icon}</div>
+              <h3 className="text-xl font-bold mb-2">{r.role}</h3>
+              <p className="text-gray-400">{r.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="text-center p-12 bg-gradient-to-r from-emerald-900/50 to-teal-900/30 rounded-3xl border border-emerald-700/30">
+          <h2 className="text-3xl font-bold mb-4">¿Listo para jugar?</h2>
+          <p className="text-gray-400 mb-8">
+            Crea tu primer torneo en minutos y empieza a jugar
+          </p>
+          <button
+            onClick={() => setShowLogin(true)}
+            className="px-10 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold text-lg transition-colors inline-flex items-center gap-2"
+          >
+            Comenzar Ahora <ArrowRight size={20} />
+          </button>
         </div>
       </div>
     </div>

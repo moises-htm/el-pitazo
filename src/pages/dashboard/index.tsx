@@ -1,11 +1,11 @@
 // Main layout with conditional routing based on user role
 import { useEffect, useState } from "react";
-import { useAuthStore } from "../stores/auth";
+import { useAuthStore } from "@/lib/auth";
 import { useRouter } from "next/router";
 import { Loader2, LogOut, ChevronDown } from "lucide-react";
-import OrganizerDashboard from "./dashboard/organizer";
-import PlayerDashboard from "./dashboard/player";
-import RefereeDashboard from "./dashboard/referee";
+import OrganizerDashboard from "./organizer";
+import PlayerDashboard from "./player";
+import RefereeDashboard from "./referee";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -29,7 +29,7 @@ export default function Dashboard() {
     router.push("/");
   };
 
-  const switchToRole = (role) => {
+  const switchToRole = (role: string) => {
     localStorage.setItem("active-role", role);
     setShowRolePicker(false);
   };
@@ -85,7 +85,7 @@ export default function Dashboard() {
             )}
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-gray-400 text-sm hidden md:block">{user.name}</span>
+            <span className="text-gray-400 text-sm hidden md:block">{(user || {}).name}</span>
             <button onClick={handleLogout} className="text-gray-400 hover:text-white p-2">
               <LogOut size={18} />
             </button>

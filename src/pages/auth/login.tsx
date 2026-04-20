@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { useAuthStore } from "../stores/auth";
+import { useAuthStore } from "@/lib/auth";
 import { ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
@@ -10,7 +10,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.password) return setError("Necesitas contraseña");
     if (!form.phone && !form.email) return setError("Necesitas teléfono o email");
@@ -20,7 +20,7 @@ export default function LoginPage() {
     try {
       await login(form);
       router.push("/dashboard");
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || "Error al iniciar sesión");
     } finally {
       setLoading(false);
