@@ -22,7 +22,7 @@ export function FinancialDashboard() {
     ],
   };
 
-  const formatCurrency = (amount) => `$${amount.toLocaleString('es-MX')}`;
+  const formatCurrency = (amount: number) => `$${amount.toLocaleString('es-MX')}`;
 
   return (
     <div className="space-y-6">

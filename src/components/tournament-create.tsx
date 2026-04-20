@@ -17,7 +17,7 @@ export function TournamentCreate() {
   const [loading, setLoading] = useState(false);
   const [created, setCreated] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     // API call to create tournament
