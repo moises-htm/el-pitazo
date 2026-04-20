@@ -1,0 +1,18 @@
+node_modules/
+.next/
+.env
+.env.local
+*.log
+.DS_Store
+dist/
+build/
+coverage/
+*.swp
+*.swo
+*~
+
+# Prisma
+prisma/migrations/
+
+# OS
+Thumbs.db

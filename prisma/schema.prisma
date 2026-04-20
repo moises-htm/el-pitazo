@@ -1,0 +1,372 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PLAYER
+  REFEREE
+  ORGANIZER
+}
+
+enum TournamentStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  POSTPONED
+  CANCELLED
+}
+
+enum BracketType {
+  LEAGUE
+  KNOCKOUT
+  GROUPS
+  SWISS
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+  FAILED
+}
+
+enum PaymentMethod {
+  STRIPE
+  MERCADOPAGO
+  SPEI
+  OXXO
+  CASH
+}
+
+enum TeamPaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  phone     String?  @unique
+  email     String?  @unique
+  password  String
+  role      Role[]
+  name      String
+  avatar    String?
+  country   String   @default("MX")
+  lang      String   @default("es")
+  rating    Decimal  @default(0.00)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdTournaments Tournament[] @relation("OrganizerTournaments")
+  refereeAssignments RefereeAssignment[]
+  refereeReports     RefereeReport[]
+  notifications      Notification[]
+  payments           Payment[]
+  teamMembers        TeamMember[]
+  teamCaptain        Team?       @relation("TeamCaptains")
+  matchEvents        MatchEvent[]
+  mediaUploads       TournamentMedia[]
+
+  @@map("users")
+}
+
+model Tournament {
+  id             String              @id @default(uuid()) @db.Uuid
+  creatorId      String              @relation("OrganizerTournaments", fields: [creatorId], references: [id])
+  creator        User                @relation(fields: [creatorId], references: [id])
+  name           String
+  description    String?
+  type           BracketType
+  maxTeams       Int
+  status         TournamentStatus    @default(DRAFT)
+  startDate      DateTime?
+  endDate        DateTime?
+  fieldLocation  String?
+  fieldAddress   String?
+  fieldLat       Decimal?
+  fieldLng       Decimal?
+  rules          Json?
+  regFee         Decimal
+  currency       String              @default("MXN")
+  websiteUrl     String?
+  coverImage     String?
+  isPublic       Boolean             @default(true)
+  minSkill       Int?
+  maxSkill       Int?
+  photoCount     Int                 @default(0)
+  totalScoreCount Int                @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  fields         Field[]
+  teams          Team[]
+  bracketRounds  BracketRound[]
+  notifications  Notification[]
+  payments       Payment[]
+  media          TournamentMedia[]
+  sponsors       Sponsor[]
+  analytics      TournamentAnalytics[]
+  refereeAssignments RefereeAssignment[]
+
+  @@map("tournaments")
+}
+
+model Field {
+  id            String   @id @default(uuid()) @db.Uuid
+  tournamentId  String   @relation(fields: [tournamentId], references: [id])
+  name          String
+  address       String?
+  lat           Decimal?
+  lng           Decimal?
+  surface       String?
+  size          String?
+  availableSlots Json?
+  aedAvailable  Boolean  @default(false)
+  aedLocation   String?
+  waterAvail    Boolean  @default(false)
+  parkingAvail  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  matches       BracketMatch[]
+
+  @@map("fields")
+}
+
+model Team {
+  id             String              @id @default(uuid()) @db.Uuid
+  tournamentId   String
+  name           String
+  captainId      String?
+  captain        User?               @relation("TeamCaptains", fields: [captainId], references: [id])
+  logo           String?
+  colorHex       String?
+  skillLevel     Int?
+  payStatus      TeamPaymentStatus   @default(PENDING)
+  payAmount      Decimal
+  playersCount   Int                 @default(0)
+  createdAt      DateTime            @default(now())
+
+  tournament     Tournament          @relation(fields: [tournamentId], references: [id])
+  members        TeamMember[]
+  homeMatches    BracketMatch[]      @relation("HomeMatches")
+  awayMatches    BracketMatch[]      @relation("AwayMatches")
+  payments       Payment[]
+
+  @@unique([tournamentId, name])
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  teamId    String
+  userId    String
+  number    Int
+  position  String?
+  isCaptain Boolean  @default(false)
+  joinedAt  DateTime @default(now())
+
+  team      Team     @relation(fields: [teamId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, number])
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+model BracketRound {
+  id         String             @id @default(uuid()) @db.Uuid
+  tournamentId String
+  roundNum   Int
+  bracketType String?
+  createdAt  DateTime           @default(now())
+
+  tournament Tournament          @relation(fields: [tournamentId], references: [id])
+  matches    BracketMatch[]
+
+  @@unique([tournamentId, roundNum])
+  @@map("bracket_rounds")
+}
+
+model BracketMatch {
+  id              String         @id @default(uuid()) @db.Uuid
+  roundId         String
+  round           BracketRound   @relation(fields: [roundId], references: [id])
+  fieldId         String?
+  field           Field?         @relation(fields: [fieldId], references: [id])
+  homeTeamId      String?
+  homeTeam        Team?          @relation("HomeMatches", fields: [homeTeamId], references: [id])
+  awayTeamId      String?
+  awayTeam        Team?          @relation("AwayMatches", fields: [awayTeamId], references: [id])
+  homeScore       Int?
+  awayScore       Int?
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  refereeId       String?
+  referee         User?          @relation(fields: [refereeId], references: [id])
+  status          MatchStatus    @default(SCHEDULED)
+  forfeitTeamId   String?
+  notes           String?
+  homeConfirmed   Boolean        @default(false)
+  awayConfirmed   Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  events          MatchEvent[]
+  refereeAssign   RefereeAssignment?
+  reports         RefereeReport[]
+  media           TournamentMedia[]
+
+  @@map("bracket_matches")
+}
+
+model MatchEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  matchId   String
+  match     BracketMatch @relation(fields: [matchId], references: [id])
+  playerId  String?
+  teamId    String?
+  eventType String
+  minute    Int
+  extraMin  Int      @default(0)
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([matchId])
+  @@map("match_events")
+}
+
+model Payment {
+  id                    String           @id @default(uuid()) @db.Uuid
+  tournamentId          String?
+  tournament            Tournament?      @relation(fields: [tournamentId], references: [id])
+  teamId                String?
+  team                  Team?            @relation(fields: [teamId], references: [id])
+  userId                String
+  user                  User             @relation(fields: [userId], references: [id])
+  amount                Decimal
+  currency              String           @default("MXN")
+  method                PaymentMethod
+  status                PaymentStatus    @default(PENDING)
+  externalId            String?
+  receiptUrl            String?
+  paidAt                DateTime?
+  createdAt             DateTime         @default(now())
+
+  @@index([teamId])
+  @@index([status])
+  @@map("payments")
+}
+
+model RefereeAssignment {
+  id          String      @id @default(uuid()) @db.Uuid
+  matchId     String
+  match       BracketMatch @relation(fields: [matchId], references: [id])
+  refereeId   String
+  referee     User       @relation(fields: [refereeId], references: [id])
+  secondRef   String?
+  thirdRef    String?
+  status      String      @default("assigned")
+  fee         Decimal?
+  paid        Boolean     @default(false)
+  paidAt      DateTime?
+  createdAt   DateTime    @default(now())
+
+  @@unique([matchId, refereeId])
+  @@map("referee_assignments")
+}
+
+model RefereeReport {
+  id             String     @id @default(uuid()) @db.Uuid
+  matchId        String
+  match          BracketMatch @relation(fields: [matchId], references: [id])
+  refereeId      String
+  referee        User       @relation(fields: [refereeId], references: [id])
+  reportText     String?
+  incidents      Json?
+  fieldCond      String?
+  safetyIssues   Json?
+  captainSig     String?
+  submittedAt    DateTime?
+  createdAt      DateTime   @default(now())
+
+  @@map("referee_reports")
+}
+
+model Notification {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  tournamentId String?
+  type       String
+  title      String
+  body       String
+  data       Json?
+  read       Boolean  @default(false)
+  channel    String?
+  sentAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+model TournamentMedia {
+  id          String   @id @default(uuid()) @db.Uuid
+  tournamentId String
+  matchId     String?
+  uploaderId  String
+  uploader    User     @relation("MediaUploaders", fields: [uploaderId], references: [id])
+  url         String
+  type        String
+  caption     String?
+  createdAt   DateTime @default(now())
+
+  @@index([tournamentId])
+  @@map("tournament_media")
+}
+
+model Sponsor {
+  id          String   @id @default(uuid()) @db.Uuid
+  tournamentId String
+  name        String
+  logo        String?
+  tier        String
+  amount      Decimal
+  adPlacement Json?
+  contact     String?
+  createdAt   DateTime @default(now())
+
+  @@map("sponsors")
+}
+
+model TournamentAnalytics {
+  id          String   @id @default(uuid()) @db.Uuid
+  tournamentId String
+  date        DateTime
+  visitors    Int
+  pageViews   Int
+  regCount    Int
+  payCount    Int
+  payTotal    Decimal
+  socialShares Int
+  createdAt   DateTime @default(now())
+
+  @@index([tournamentId])
+  @@map("tournament_analytics")
+}
