@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Heart, MessageCircle, Share2, Play, Upload, Trophy, X } from "lucide-react";
+import { Heart, MessageCircle, Play, Upload, Trophy, X } from "lucide-react";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -129,102 +129,115 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
       {/* Header */}
-      <div className="bg-gray-950/80 backdrop-blur-xl border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+      <div className="sticky top-0 z-20 px-4 py-3 flex items-center justify-between"
+        style={{ background: 'linear-gradient(to bottom, #0a0a0a, transparent)' }}>
         <div className="flex items-center gap-2">
           <span className="text-xl">⚽</span>
-          <h1 className="font-bold text-lg">El Pitazo</h1>
-          <span className="text-gray-400 text-sm">• Feed</span>
+          <h1 className="font-display font-black text-xl uppercase tracking-widest">EL PITAZO</h1>
+          <span className="text-gray-600 text-xs font-display uppercase tracking-widest">FEED</span>
         </div>
         <div className="flex items-center gap-2">
           {token && (
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-all">
-              <Upload size={14} /> Subir
+            <button onClick={() => setShowUploadModal(true)}
+              className="btn-neon px-4 py-2 rounded-lg text-sm flex items-center gap-1.5">
+              <Upload size={14} /> SUBIR
             </button>
           )}
           {!token && (
-            <Link href="/auth/login" className="text-gray-400 hover:text-white text-sm">Entrar</Link>
+            <Link href="/auth/login" className="text-gray-400 hover:text-[#39FF14] text-sm font-display uppercase tracking-wide transition-colors">
+              Entrar
+            </Link>
           )}
         </div>
       </div>
 
       {/* Feed: vertical scroll */}
-      <div className="max-w-lg mx-auto pb-20">
+      <div className="pb-20">
         {loading && posts.length === 0 ? (
-          <div className="space-y-1 p-4">
+          <div className="space-y-1">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="animate-pulse bg-white/5 rounded-2xl" style={{ height: "70vh" }} />
+              <div key={i} className="animate-pulse bg-white/5 w-full" style={{ height: "70vh" }} />
             ))}
           </div>
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-6">
             <Play size={48} className="text-gray-600 mb-4" />
-            <h3 className="text-white font-semibold text-lg">Sin videos aún</h3>
+            <h3 className="font-display font-black text-2xl uppercase">Sin videos aún</h3>
             <p className="text-gray-400 text-sm mt-1">¡Sé el primero en compartir un gol!</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div>
             {posts.map(post => (
-              <div key={post.id} className="relative bg-gray-900 mx-2 my-3 rounded-2xl overflow-hidden">
+              <div key={post.id} className="relative bg-black w-full" style={{ marginBottom: '2px' }}>
                 {/* Featured badge */}
                 {post.isFeatured && (
-                  <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded-full">
-                    <Trophy size={10} /> Gol de la Jornada
+                  <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5 bg-[#39FF14] text-black text-xs font-display font-black uppercase px-3 py-1 rounded-full tracking-wide shadow-neon-sm">
+                    <Trophy size={10} /> GOL DE LA JORNADA
                   </div>
                 )}
 
-                {/* Video */}
-                <div className="relative" style={{ aspectRatio: "9/16" }}>
-                  <video
-                    src={post.videoUrl}
-                    poster={post.thumbnailUrl}
-                    className="w-full h-full object-cover"
-                    controls
-                    playsInline
-                    preload="metadata"
-                  />
-                </div>
+                {/* Video — full width, 9:16 on mobile, constrained on desktop */}
+                <div className="relative w-full mx-auto" style={{ maxWidth: '480px' }}>
+                  <div style={{ aspectRatio: '9/16', position: 'relative', background: '#111' }}>
+                    <video
+                      src={post.videoUrl}
+                      poster={post.thumbnailUrl}
+                      className="w-full h-full object-cover"
+                      controls
+                      playsInline
+                      preload="metadata"
+                    />
 
-                {/* Info overlay */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-sm font-bold">
-                          {post.uploader.avatar ? (
-                            <img src={post.uploader.avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                          ) : (
-                            post.uploader.name[0]?.toUpperCase()
-                          )}
+                    {/* RIGHT SIDE — floating action buttons (TikTok style) */}
+                    <div className="absolute right-3 bottom-20 flex flex-col items-center gap-5 z-20">
+                      {/* Like */}
+                      <button onClick={() => toggleLike(post)}
+                        className="flex flex-col items-center gap-1">
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center ${post.likedByMe ? 'bg-[#39FF14]' : 'bg-black/50 backdrop-blur-sm border border-white/20'} transition-all`}
+                          style={post.likedByMe ? { boxShadow: '0 0 12px #39FF14' } : {}}>
+                          <Heart size={22} fill={post.likedByMe ? "#000" : "none"} className={post.likedByMe ? "text-black" : "text-white"} />
                         </div>
-                        <span className="text-white font-semibold text-sm">{post.uploader.name}</span>
-                      </div>
-                      {post.caption && <p className="text-gray-300 text-sm">{post.caption}</p>}
-                    </div>
+                        <span className="text-white text-xs font-bold drop-shadow">{post.likesCount}</span>
+                      </button>
 
-                    {/* Actions */}
-                    <div className="flex flex-col items-center gap-3">
-                      <button
-                        onClick={() => toggleLike(post)}
-                        className={`flex flex-col items-center gap-0.5 ${post.likedByMe ? "text-red-400" : "text-gray-400 hover:text-red-400"} transition-colors`}>
-                        <Heart size={24} fill={post.likedByMe ? "currentColor" : "none"} />
-                        <span className="text-xs">{post.likesCount}</span>
+                      {/* Comment */}
+                      <button onClick={() => openComments(post)}
+                        className="flex flex-col items-center gap-1">
+                        <div className="w-11 h-11 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                          <MessageCircle size={22} className="text-white" />
+                        </div>
+                        <span className="text-white text-xs font-bold drop-shadow">{post.commentsCount}</span>
                       </button>
-                      <button
-                        onClick={() => openComments(post)}
-                        className="flex flex-col items-center gap-0.5 text-gray-400 hover:text-white transition-colors">
-                        <MessageCircle size={24} />
-                        <span className="text-xs">{post.commentsCount}</span>
-                      </button>
-                      <WhatsAppShareButton
-                        text={`Mira este golazo en El Pitazo ⚽🔥\n${typeof window !== "undefined" ? window.location.origin : "https://elpitazo.app"}/feed?post=${post.id}`}
-                        compact={true}
-                        className="!bg-transparent !text-gray-400 hover:!text-green-400 !p-0"
-                      />
+
+                      {/* Share */}
+                      <div className="flex flex-col items-center gap-1">
+                        <WhatsAppShareButton
+                          text={`Mira este golazo en El Pitazo ⚽🔥\n${typeof window !== "undefined" ? window.location.origin : ""}/feed?post=${post.id}`}
+                          compact={true}
+                          className="!w-11 !h-11 !rounded-full !bg-black/50 backdrop-blur-sm !border !border-white/20 hover:!bg-[#39FF14]/20 !p-0 !flex !items-center !justify-center"
+                        />
+                        <span className="text-white text-xs font-bold drop-shadow">Share</span>
+                      </div>
                     </div>
+                  </div>
+
+                  {/* BOTTOM INFO — overlaid on video bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 z-10"
+                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-[#39FF14]/20 flex items-center justify-center text-sm font-black font-display"
+                        style={{ border: '2px solid rgba(57,255,20,0.5)' }}>
+                        {post.uploader.avatar ? (
+                          <img src={post.uploader.avatar} alt="" className="w-full h-full object-cover" />
+                        ) : post.uploader.name[0]?.toUpperCase()}
+                      </div>
+                      <span className="text-white font-semibold text-sm">{post.uploader.name}</span>
+                    </div>
+                    {post.caption && (
+                      <p className="text-gray-200 text-sm leading-snug">{post.caption}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -245,11 +258,11 @@ export default function FeedPage() {
         )}
       </div>
 
-      {/* Comments Panel */}
+      {/* Comments Panel — bottom sheet */}
       {showComments && activePost && (
         <div className="fixed inset-0 z-40 flex items-end">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowComments(false)} />
-          <div className="relative bg-gray-900 border-t border-white/10 rounded-t-2xl w-full max-w-lg mx-auto max-h-[80vh] flex flex-col">
+          <div className="relative bg-[#111] border-t border-white/10 rounded-t-2xl w-full max-h-[70vh] flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <span className="text-white font-semibold">Comentarios</span>
               <button onClick={() => setShowComments(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
@@ -271,11 +284,11 @@ export default function FeedPage() {
                 onChange={e => setCommentInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && postComment()}
                 placeholder="Escribe un comentario..."
-                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-green-500"
+                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#39FF14]"
               />
               <button
                 onClick={postComment}
-                className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-lg transition-all">
+                className="btn-neon p-2 rounded-lg transition-all">
                 <MessageCircle size={18} />
               </button>
             </div>
@@ -287,7 +300,7 @@ export default function FeedPage() {
       {showUploadModal && (
         <div className="fixed inset-0 z-40 flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowUploadModal(false)} />
-          <div className="relative bg-gray-900 border border-white/10 rounded-t-2xl md:rounded-2xl w-full max-w-md p-6">
+          <div className="relative bg-[#111] border border-white/10 rounded-t-2xl md:rounded-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-semibold">Subir video</h3>
               <button onClick={() => setShowUploadModal(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
@@ -303,14 +316,14 @@ export default function FeedPage() {
 
             {uploadFile ? (
               <div className="bg-white/5 rounded-xl p-3 mb-3 flex items-center gap-2">
-                <Play size={16} className="text-green-400" />
+                <Play size={16} className="text-[#39FF14]" />
                 <span className="text-white text-sm truncate">{uploadFile.name}</span>
                 <button onClick={() => setUploadFile(null)} className="ml-auto text-gray-400 hover:text-white"><X size={14} /></button>
               </div>
             ) : (
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed border-white/20 hover:border-green-500 rounded-xl p-8 text-center mb-3 transition-all">
+                className="w-full border-2 border-dashed border-[#39FF14]/20 hover:border-[#39FF14]/60 rounded-xl p-8 text-center mb-3 transition-all">
                 <Upload size={32} className="mx-auto text-gray-500 mb-2" />
                 <p className="text-gray-400 text-sm">Toca para seleccionar un video</p>
                 <p className="text-gray-500 text-xs mt-1">MP4, MOV — máx 30 segundos</p>
@@ -322,13 +335,13 @@ export default function FeedPage() {
               onChange={e => setUploadCaption(e.target.value)}
               placeholder="Descripción (opcional)"
               rows={2}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-green-500 resize-none mb-3"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#39FF14] resize-none mb-3"
             />
 
             <button
               onClick={uploadVideo}
               disabled={!uploadFile || uploading}
-              className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3 rounded-xl font-semibold transition-all">
+              className="btn-neon w-full disabled:opacity-50 py-3 rounded-xl font-semibold transition-all">
               {uploading ? "Subiendo..." : "Publicar video"}
             </button>
           </div>
