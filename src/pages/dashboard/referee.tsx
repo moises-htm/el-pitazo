@@ -18,7 +18,7 @@ export default function RefereeDashboard() {
 
   useEffect(() => {
     if (activeTab === "today") fetchMatches();
-    if (activeTab === "earnings" || activeTab === "stats") fetchEarnings();
+    if (activeTab === "earnings" || activeTab === "stats" || activeTab === "history") fetchEarnings();
   }, [activeTab]);
 
   async function fetchMatches() {
