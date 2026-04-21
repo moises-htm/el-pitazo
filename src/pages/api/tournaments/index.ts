@@ -60,7 +60,8 @@ export default async function handler(
       });
       return res.json({ tournament });
     } catch (err: any) {
-      return res.status(500).json({ error: err.message });
+      if (err.code === "P2002") return res.status(409).json({ error: "Ya existe un torneo con ese nombre" });
+      return res.status(500).json({ error: "Error al crear el torneo" });
     }
   }
 

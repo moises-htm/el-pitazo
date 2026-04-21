@@ -52,6 +52,10 @@ export default async function handler(
     });
   } catch (err: any) {
     console.error("Register error:", err);
-    return res.status(500).json({ error: err.message || "Registration failed" });
+    if (err.code === "P2002") {
+      const field = err.meta?.target?.includes("email") ? "email" : "teléfono";
+      return res.status(409).json({ error: `Ya existe una cuenta con ese ${field}` });
+    }
+    return res.status(500).json({ error: "Error al crear la cuenta" });
   }
 }

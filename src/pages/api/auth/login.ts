@@ -48,6 +48,6 @@ export default async function handler(
     });
   } catch (err: any) {
     console.error("Login error:", err);
-    return res.status(500).json({ error: err.message || "Login failed" });
+    return res.status(500).json({ error: "Error al iniciar sesión" });
   }
 }
