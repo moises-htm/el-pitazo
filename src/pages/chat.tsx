@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { MessageCircle, Send, ChevronLeft, Users, Trophy, User2 } from "lucide-react";
+import { MessageCircle, Send, Users, Trophy, User2, ArrowLeft, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -28,34 +28,6 @@ interface ChatMessage {
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
-}
-
-function RoomTypeBadge({ type }: { type: ChatRoom["type"] }) {
-  if (type === "LIGA") {
-    return (
-      <span className="flex items-center gap-1 text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">
-        <Trophy size={10} /> Liga
-      </span>
-    );
-  }
-  if (type === "CAPTAIN_DM") {
-    return (
-      <span className="flex items-center gap-1 text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
-        <User2 size={10} /> Capitán
-      </span>
-    );
-  }
-  return (
-    <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
-      <Users size={10} /> Equipo
-    </span>
-  );
-}
-
-function RoomIcon({ type }: { type: ChatRoom["type"] }) {
-  if (type === "LIGA") return <Trophy size={18} className="text-yellow-400" />;
-  if (type === "CAPTAIN_DM") return <User2 size={18} className="text-blue-400" />;
-  return <Users size={18} className="text-green-400" />;
 }
 
 function formatTime(dateStr: string) {
@@ -111,7 +83,7 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Polling
+  // Polling — 3s, skips when tab hidden
   useEffect(() => {
     if (pollingRef.current) clearInterval(pollingRef.current);
     if (!selectedRoom) return;
@@ -185,176 +157,257 @@ export default function ChatPage() {
 
   if (!hydrated || !token) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-green-950 to-gray-950 flex items-center justify-center">
-        <div className="animate-pulse text-gray-500">Cargando...</div>
+      <div className="h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="animate-pulse text-gray-500 font-display uppercase tracking-widest text-sm">
+          Cargando...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-green-950 to-gray-950 flex flex-col">
-      {/* Header */}
-      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 px-4 py-3 flex items-center gap-3">
-        <button
-          onClick={() => router.back()}
-          className="text-gray-400 hover:text-white transition-colors"
-          aria-label="Volver"
-        >
-          <ChevronLeft size={22} />
-        </button>
-        <MessageCircle size={20} className="text-green-400" />
-        <h1 className="text-white font-bold text-lg">Chat</h1>
-        {selectedRoom && !showRooms && (
-          <span className="text-gray-400 text-sm ml-1 truncate">{selectedRoom.name}</span>
-        )}
-        <div className="flex-1" />
-        {/* Mobile: back to room list */}
-        {!showRooms && (
-          <button
-            onClick={() => setShowRooms(true)}
-            className="md:hidden text-gray-400 hover:text-white transition-colors text-sm"
-          >
-            Salas
-          </button>
-        )}
-      </div>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Room List */}
-        <aside
-          className={`
-            w-full md:w-80 md:min-w-[280px] border-r border-white/10 bg-black/20 flex flex-col
-            ${showRooms ? "flex" : "hidden md:flex"}
-          `}
-        >
-          <div className="p-4 border-b border-white/10">
-            <h2 className="text-white font-semibold text-sm">Mis salas</h2>
+    <div className="h-screen bg-[#0a0a0a] flex overflow-hidden">
+      {/* ── Left panel — room list ── */}
+      <div
+        className={`${
+          showRooms ? "flex" : "hidden"
+        } md:flex flex-col w-full md:w-80 border-r border-white/5 bg-[#111] shrink-0`}
+      >
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-white/5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display font-black text-xl uppercase text-white">CHAT</h1>
+              <p className="text-gray-500 text-xs font-display uppercase tracking-widest">
+                El Pitazo
+              </p>
+            </div>
+            <button
+              onClick={() => router.back()}
+              className="text-gray-600 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-all"
+              aria-label="Volver"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            {loadingRooms ? (
-              <div className="p-4 space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16" />
-                ))}
-              </div>
-            ) : rooms.length === 0 ? (
-              <div className="p-6 text-center text-gray-500 text-sm">
-                <Users size={32} className="mx-auto mb-2 opacity-40" />
-                No tienes salas de chat aún.
-                <br />
-                Únete a un equipo para chatear.
-              </div>
-            ) : (
-              rooms.map((room) => (
-                <button
-                  key={room.id}
-                  onClick={() => selectRoom(room)}
-                  className={`w-full text-left px-4 py-3 border-b border-white/5 transition-all hover:bg-white/5 ${
-                    selectedRoom?.id === room.id ? "bg-white/10 border-l-2 border-l-green-500" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="shrink-0">
-                      <RoomIcon type={room.type} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-white text-sm font-medium truncate">{room.name}</span>
-                        <RoomTypeBadge type={room.type} />
-                      </div>
-                      {room.lastMessage && (
-                        <p className="text-gray-500 text-xs truncate mt-0.5">{room.lastMessage}</p>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
-        </aside>
+        </div>
 
-        {/* Chat Area */}
-        <main
-          className={`
-            flex-1 flex flex-col min-w-0
-            ${!showRooms ? "flex" : "hidden md:flex"}
-          `}
-        >
-          {!selectedRoom ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-              <MessageCircle size={48} className="mb-3 opacity-30" />
-              <p className="text-sm">Selecciona una sala para chatear</p>
+        {/* Room list */}
+        <div className="flex-1 overflow-y-auto">
+          {loadingRooms ? (
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-16" />
+              ))}
+            </div>
+          ) : rooms.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <MessageCircle size={40} className="text-gray-700 mb-3" />
+              <p className="text-gray-500 text-sm font-display uppercase">Sin salas aún</p>
+              <p className="text-gray-700 text-xs mt-1">Únete a un equipo para chatear</p>
             </div>
           ) : (
-            <>
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {loadingMessages ? (
-                  <div className="space-y-3">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Skeleton key={i} className={`h-12 ${i % 2 === 0 ? "w-3/4" : "w-1/2 ml-auto"}`} />
-                    ))}
+            rooms.map((room) => (
+              <button
+                key={room.id}
+                onClick={() => selectRoom(room)}
+                className={`w-full text-left px-4 py-3.5 flex items-center gap-3 transition-all border-b border-white/[0.04] ${
+                  selectedRoom?.id === room.id
+                    ? "bg-[#39FF14]/10 border-l-2 border-l-[#39FF14]"
+                    : "hover:bg-white/5"
+                }`}
+              >
+                {/* Room type icon */}
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    room.type === "LIGA"
+                      ? "bg-yellow-500/20"
+                      : room.type === "TEAM"
+                      ? "bg-[#39FF14]/20"
+                      : "bg-blue-500/20"
+                  }`}
+                >
+                  {room.type === "LIGA" ? (
+                    <Trophy size={18} className="text-yellow-400" />
+                  ) : room.type === "TEAM" ? (
+                    <Users size={18} className="text-[#39FF14]" />
+                  ) : (
+                    <User2 size={18} className="text-blue-400" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display font-bold text-sm uppercase text-white truncate">
+                    {room.name}
                   </div>
-                ) : messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm">
-                    <MessageCircle size={32} className="mb-2 opacity-30" />
-                    No hay mensajes aún. ¡Sé el primero!
+                  <div className="text-xs text-gray-600 truncate mt-0.5 font-display uppercase tracking-wide">
+                    {room.type === "LIGA"
+                      ? "LIGA"
+                      : room.type === "TEAM"
+                      ? "EQUIPO"
+                      : "DM"}
                   </div>
-                ) : (
-                  messages.map((msg) => {
-                    const isOwn = msg.userId === user?.id;
-                    return (
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── Right panel — messages ── */}
+      <div
+        className={`${
+          showRooms ? "hidden" : "flex"
+        } md:flex flex-col flex-1 bg-[#0a0a0a]`}
+      >
+        {/* Messages header */}
+        {selectedRoom ? (
+          <div className="px-5 py-3.5 border-b border-white/5 bg-[#111] flex items-center gap-3">
+            <button
+              onClick={() => setShowRooms(true)}
+              className="md:hidden text-gray-400 hover:text-white mr-1"
+              aria-label="Ver salas"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div
+              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                selectedRoom.type === "LIGA"
+                  ? "bg-yellow-500/20"
+                  : selectedRoom.type === "TEAM"
+                  ? "bg-[#39FF14]/20"
+                  : "bg-blue-500/20"
+              }`}
+            >
+              {selectedRoom.type === "LIGA" ? (
+                <Trophy size={16} className="text-yellow-400" />
+              ) : selectedRoom.type === "TEAM" ? (
+                <Users size={16} className="text-[#39FF14]" />
+              ) : (
+                <User2 size={16} className="text-blue-400" />
+              )}
+            </div>
+            <div>
+              <div className="font-display font-black text-base uppercase text-white">
+                {selectedRoom.name}
+              </div>
+              <div className="text-xs text-gray-500 font-display uppercase tracking-wide">
+                {selectedRoom.type === "LIGA"
+                  ? "CHAT DE LIGA"
+                  : selectedRoom.type === "TEAM"
+                  ? "CHAT DE EQUIPO"
+                  : "MENSAJE DIRECTO"}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="px-5 py-3.5 border-b border-white/5 bg-[#111]">
+            <div className="font-display font-black text-lg uppercase text-white">MENSAJES</div>
+          </div>
+        )}
+
+        {/* Messages area or empty state */}
+        {!selectedRoom ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+            <MessageCircle size={48} className="text-gray-800 mb-4" />
+            <p className="font-display font-black text-xl uppercase text-gray-700">
+              Selecciona una sala
+            </p>
+            <p className="text-gray-700 text-sm mt-1">
+              Elige una conversación para empezar
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Messages scroll area */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+              {loadingMessages ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton
+                      key={i}
+                      className={`h-12 ${i % 2 === 0 ? "w-3/4" : "w-1/2 ml-auto"}`}
+                    />
+                  ))}
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-600 text-sm">
+                  <MessageCircle size={32} className="mb-2 opacity-30" />
+                  <p className="font-display uppercase">No hay mensajes aún. ¡Sé el primero!</p>
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isOwn = msg.userId === user?.id;
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                    >
                       <div
-                        key={msg.id}
-                        className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}
+                        className={`max-w-[72%] rounded-2xl px-4 py-2.5 ${
+                          isOwn
+                            ? "bg-[#39FF14] text-black rounded-br-sm"
+                            : "bg-white/[0.08] text-white rounded-bl-sm border border-white/5"
+                        }`}
+                        style={
+                          isOwn
+                            ? { boxShadow: "0 0 12px rgba(57,255,20,0.25)" }
+                            : {}
+                        }
                       >
                         {!isOwn && (
-                          <span className="text-xs text-gray-500 mb-1 px-1">{msg.userName}</span>
+                          <div
+                            className="text-[10px] font-display font-bold uppercase tracking-widest mb-0.5"
+                            style={{ color: "#39FF14" }}
+                          >
+                            {msg.userName}
+                          </div>
                         )}
+                        <p className="text-sm leading-snug">{msg.body}</p>
                         <div
-                          className={`max-w-xs md:max-w-md lg:max-w-lg px-4 py-2 rounded-2xl text-sm break-words ${
-                            isOwn
-                              ? "bg-green-600 text-white rounded-br-sm"
-                              : "bg-white/10 text-gray-100 rounded-bl-sm"
+                          className={`text-[10px] mt-1 ${
+                            isOwn ? "text-black/50" : "text-gray-600"
                           }`}
                         >
-                          {msg.body}
-                        </div>
-                        <span className="text-xs text-gray-600 mt-1 px-1">
                           {formatTime(msg.createdAt)}
-                        </span>
+                        </div>
                       </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+                    </div>
+                  );
+                })
+              )}
+              {/* Scroll anchor */}
+              <div ref={messagesEndRef} />
+            </div>
 
-              {/* Input */}
-              <div className="border-t border-white/10 p-3 bg-black/20">
-                <div className="flex items-end gap-2">
-                  <textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Escribe un mensaje... (Enter para enviar)"
-                    rows={1}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:border-green-500/50 focus:outline-none resize-none max-h-32"
-                    style={{ minHeight: "42px" }}
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!input.trim() || sending}
-                    className="shrink-0 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white p-2.5 rounded-xl transition-all"
-                    aria-label="Enviar"
-                  >
-                    <Send size={18} />
-                  </button>
-                </div>
+            {/* Input area */}
+            <div className="px-4 py-3 border-t border-white/5 bg-[#111]">
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Escribe un mensaje..."
+                  rows={1}
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:border-[#39FF14]/40 focus:outline-none resize-none"
+                  style={{ minHeight: "44px", maxHeight: "128px" }}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || sending}
+                  className="w-11 h-11 rounded-xl bg-[#39FF14] hover:bg-[#4fff2a] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all shrink-0"
+                  style={{
+                    boxShadow: input.trim()
+                      ? "0 0 12px rgba(57,255,20,0.4)"
+                      : "none",
+                  }}
+                  aria-label="Enviar"
+                >
+                  <Send size={18} className="text-black" />
+                </button>
               </div>
-            </>
-          )}
-        </main>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
