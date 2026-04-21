@@ -5,7 +5,8 @@ import { TournamentCreate } from "@/components/tournament-create";
 import { TeamList } from "@/components/team-list";
 import { BracketView } from "@/components/bracket-view";
 import { FinancialDashboard } from "@/components/financial-dashboard";
-import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus } from "lucide-react";
+import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock } from "lucide-react";
+import { toast } from "sonner";
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
@@ -18,6 +19,8 @@ export default function OrganizerDashboard() {
   const [selectedTournament, setSelectedTournament] = useState<any>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [scheduleChanges, setScheduleChanges] = useState<any[]>([]);
+  const [scheduleChangesLoading, setScheduleChangesLoading] = useState(false);
 
   const tabs = [
     { id: "tournaments", label: "Torneos", icon: <Trophy size={18} /> },
@@ -25,10 +28,12 @@ export default function OrganizerDashboard() {
     { id: "brackets", label: "Cuadros", icon: <ClipboardList size={18} /> },
     { id: "financial", label: "Finanzas", icon: <DollarSign size={18} /> },
     { id: "analytics", label: "Métricas", icon: <BarChart3 size={18} /> },
+    { id: "schedule-changes", label: "Cambios de horario", icon: <Clock size={18} /> },
   ];
 
   useEffect(() => {
     if (activeTab === "tournaments") fetchTournaments();
+    if (activeTab === "schedule-changes") fetchScheduleChanges();
   }, [activeTab]);
 
   async function fetchTournaments() {
@@ -41,6 +46,33 @@ export default function OrganizerDashboard() {
       setTournaments([]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchScheduleChanges() {
+    setScheduleChangesLoading(true);
+    try {
+      const data = await api("/api/organizer/schedule-changes", { auth: true });
+      setScheduleChanges(data.requests || []);
+    } catch {
+      setScheduleChanges([]);
+    } finally {
+      setScheduleChangesLoading(false);
+    }
+  }
+
+  async function handleScheduleChangeAction(id: string, action: "approve" | "reject", note?: string) {
+    try {
+      await api(`/api/schedule-change/${id}`, {
+        method: "PATCH",
+        auth: true,
+        body: JSON.stringify({ action, note }),
+        headers: { "Content-Type": "application/json" },
+      });
+      toast.success(action === "approve" ? "Solicitud aprobada" : "Solicitud rechazada");
+      fetchScheduleChanges();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Error al procesar solicitud");
     }
   }
 
@@ -125,6 +157,68 @@ export default function OrganizerDashboard() {
             <BarChart3 size={48} className="mx-auto text-gray-500 mb-4" />
             <h3 className="text-white text-lg font-semibold mb-2">Métricas del Torneo</h3>
             <p className="text-gray-400">{selectedTournament ? "Próximamente" : "Selecciona un torneo primero"}</p>
+          </div>
+        )}
+
+        {activeTab === "schedule-changes" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-white font-bold text-lg">Cambios de horario pendientes</h2>
+              <button onClick={fetchScheduleChanges} className="text-gray-400 hover:text-white text-sm transition-colors">
+                Actualizar
+              </button>
+            </div>
+            {scheduleChangesLoading ? (
+              Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-28" />)
+            ) : scheduleChanges.length === 0 ? (
+              <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10 text-center">
+                <Clock size={48} className="mx-auto text-gray-500 mb-4" />
+                <h3 className="text-white font-semibold mb-1">Sin solicitudes pendientes</h3>
+                <p className="text-gray-400 text-sm">No hay cambios de horario esperando tu aprobación</p>
+              </div>
+            ) : (
+              scheduleChanges.map((req: any) => {
+                const homeTeam = req.match?.homeTeam?.name ?? "TBD";
+                const awayTeam = req.match?.awayTeam?.name ?? "TBD";
+                const tournamentName = req.match?.round?.tournament?.name ?? "";
+                const proposed = new Date(req.proposedTime).toLocaleString("es-MX", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                });
+                return (
+                  <div key={req.id} className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-white font-semibold">{homeTeam} vs {awayTeam}</p>
+                        {tournamentName && <p className="text-gray-400 text-xs mt-0.5">{tournamentName}</p>}
+                        <p className="text-gray-300 text-sm mt-1">Nueva fecha propuesta: <span className="text-green-400">{proposed}</span></p>
+                        {req.reason && <p className="text-gray-400 text-sm">Motivo: {req.reason}</p>}
+                      </div>
+                      <div className="flex flex-col gap-1 text-xs shrink-0">
+                        <span className={`px-2 py-0.5 rounded ${req.captainBApproved ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}`}>
+                          {req.captainBApproved ? "Capitán B: OK" : "Capitán B: pendiente"}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded ${req.refereeApproved ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}`}>
+                          {req.refereeApproved ? "Árbitro: OK" : "Árbitro: pendiente"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleScheduleChangeAction(req.id, "approve")}
+                        className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded-lg font-semibold text-sm transition-all">
+                        Aprobar
+                      </button>
+                      <button
+                        onClick={() => handleScheduleChangeAction(req.id, "reject")}
+                        className="flex-1 bg-red-600/80 hover:bg-red-600 text-white py-2 rounded-lg font-semibold text-sm transition-all">
+                        Rechazar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         )}
       </div>

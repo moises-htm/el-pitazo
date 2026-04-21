@@ -235,6 +235,7 @@ model BracketMatch {
   refereeAssign   RefereeAssignment?  @relation("MatchRefAssignment")
   reports         RefereeReport[]
   media           TournamentMedia[]    @relation("MatchMedia")
+  scheduleChanges ScheduleChangeRequest[]
 
   @@map("bracket_matches")
 }
@@ -381,6 +382,35 @@ model TournamentAnalytics {
 
   @@index([tournamentId])
   @@map("tournament_analytics")
+}
+
+enum ScheduleChangeStatus {
+  PENDING
+  APPROVED
+  REJECTED_BY_CAPTAIN
+  REJECTED_BY_REFEREE
+  REJECTED_BY_ORGANIZER
+}
+
+model ScheduleChangeRequest {
+  id               String                @id @default(uuid()) @db.Uuid
+  matchId          String                @db.Uuid
+  match            BracketMatch          @relation(fields: [matchId], references: [id])
+  requestedById    String                @db.Uuid
+  proposedTime     DateTime
+  reason           String?
+  status           ScheduleChangeStatus  @default(PENDING)
+  captainBApproved Boolean               @default(false)
+  refereeApproved  Boolean               @default(false)
+  organizerApproved Boolean              @default(false)
+  captainBNote     String?
+  refereeNote      String?
+  organizerNote    String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([matchId])
+  @@map("schedule_change_requests")
 }
 
 model Account {
