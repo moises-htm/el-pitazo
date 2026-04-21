@@ -30,7 +30,7 @@ export default async function handler(
         email: data.email,
         password: hash,
         name: data.name,
-        role: data.role,
+        role: Array.isArray(data.role) ? data.role : [data.role],
         country: data.country,
         lang: data.lang,
       },
