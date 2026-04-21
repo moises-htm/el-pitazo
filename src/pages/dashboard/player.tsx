@@ -148,6 +148,9 @@ export default function PlayerDashboard() {
             >
               <Bell size={18} />
             </button>
+            <button onClick={() => router.push("/feed")} className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 text-sm">
+              🎬 Feed
+            </button>
             <button
               onClick={() => router.push("/chat")}
               className="flex items-center gap-1.5 bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 text-green-400 hover:text-green-300 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"

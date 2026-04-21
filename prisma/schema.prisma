@@ -86,6 +86,7 @@ model User {
   refereeMatches       BracketMatch[]                @relation("MatchReferee")
   tournamentMedia      TournamentMedia[]               @relation("MediaUploaders")
   events               MatchEvent[]
+  feedPosts            FeedPost[]    @relation("FeedUploads")
 
   @@map("users")
 }
@@ -435,6 +436,52 @@ model NotificationPreference {
   updatedAt       DateTime @updatedAt
 
   @@map("notification_preferences")
+}
+
+model FeedPost {
+  id            String    @id @default(uuid()) @db.Uuid
+  uploaderId    String    @db.Uuid
+  uploader      User      @relation("FeedUploads", fields: [uploaderId], references: [id])
+  videoUrl      String
+  thumbnailUrl  String?
+  caption       String?
+  teamId        String?   @db.Uuid
+  tournamentId  String?   @db.Uuid
+  isFeatured    Boolean   @default(false)
+  likesCount    Int       @default(0)
+  commentsCount Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  likes         FeedLike[]
+  comments      FeedComment[]
+
+  @@index([createdAt])
+  @@index([uploaderId])
+  @@map("feed_posts")
+}
+
+model FeedLike {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @db.Uuid
+  post      FeedPost @relation(fields: [postId], references: [id])
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@map("feed_likes")
+}
+
+model FeedComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @db.Uuid
+  post      FeedPost @relation(fields: [postId], references: [id])
+  userId    String   @db.Uuid
+  userName  String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@map("feed_comments")
 }
 
 model Account {

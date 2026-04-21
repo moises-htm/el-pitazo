@@ -37,6 +37,12 @@ export default function HomePage() {
             >
               Ya tengo cuenta
             </button>
+            <button
+              onClick={() => router.push("/feed")}
+              className="px-8 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold transition-colors flex items-center gap-2"
+            >
+              🎬 Ver el feed
+            </button>
           </div>
         </div>
 
