@@ -13,6 +13,10 @@ export default async function handler(
   try {
     const data = JSON.parse(JSON.stringify(req.body)) as any;
     
+    if (!data.password || (!data.phone && !data.email)) {
+      return res.status(400).json({ error: "Missing credentials" });
+    }
+
     const user = await prisma.user.findFirst({
       where: {
         OR: [{ phone: data.phone }, { email: data.email }],
@@ -20,6 +24,11 @@ export default async function handler(
     });
 
     if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const valid = await bcrypt.compare(data.password, user.password);
+    if (!valid) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
