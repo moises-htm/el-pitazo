@@ -72,23 +72,24 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  createdTournaments Tournament[] @relation("OrganizerTournaments")
-  refereeAssignments RefereeAssignment[]
-  refereeReports     RefereeReport[]
-  notifications      Notification[]
-  payments           Payment[]
-  teamMembers        TeamMember[]
-  teamCaptain        Team?       @relation("TeamCaptains")
-  matchEvents        MatchEvent[]
-  mediaUploads       TournamentMedia[]
+  createdTournaments   Tournament[]              @relation("TournamentCreator")
+  refereeAssignments   RefereeAssignment[]
+  refereeReports       RefereeReport[]
+  notifications        Notification[]              @relation("UserNotifications")
+  payments             Payment[]
+  teamMembers          TeamMember[]
+  teamCaptain          Team?                         @relation("TeamCaptains")
+  refereeMatches       BracketMatch[]                @relation("MatchReferee")
+  tournamentMedia      TournamentMedia[]               @relation("MediaUploaders")
+  events               MatchEvent[]
 
   @@map("users")
 }
 
 model Tournament {
   id             String              @id @default(uuid()) @db.Uuid
-  creatorId      String              @relation("OrganizerTournaments", fields: [creatorId], references: [id])
-  creator        User                @relation(fields: [creatorId], references: [id])
+  creatorId      String              @db.Uuid
+  creator        User                @relation("TournamentCreator", fields: [creatorId], references: [id])
   name           String
   description    String?
   type           BracketType
@@ -116,19 +117,19 @@ model Tournament {
   fields         Field[]
   teams          Team[]
   bracketRounds  BracketRound[]
-  notifications  Notification[]
+  notifications  Notification[]        @relation("TournamentNotifications")
   payments       Payment[]
-  media          TournamentMedia[]
+  media          TournamentMedia[]      @relation("TournamentMedia")
   sponsors       Sponsor[]
   analytics      TournamentAnalytics[]
-  refereeAssignments RefereeAssignment[]
 
   @@map("tournaments")
 }
 
 model Field {
   id            String   @id @default(uuid()) @db.Uuid
-  tournamentId  String   @relation(fields: [tournamentId], references: [id])
+  tournamentId  String   @db.Uuid
+  tournament    Tournament @relation(fields: [tournamentId], references: [id])
   name          String
   address       String?
   lat           Decimal?
@@ -149,9 +150,10 @@ model Field {
 
 model Team {
   id             String              @id @default(uuid()) @db.Uuid
-  tournamentId   String
+  tournamentId   String              @db.Uuid
+  tournament     Tournament          @relation(fields: [tournamentId], references: [id])
   name           String
-  captainId      String?
+  captainId      String?             @unique @db.Uuid
   captain        User?               @relation("TeamCaptains", fields: [captainId], references: [id])
   logo           String?
   colorHex       String?
@@ -161,7 +163,6 @@ model Team {
   playersCount   Int                 @default(0)
   createdAt      DateTime            @default(now())
 
-  tournament     Tournament          @relation(fields: [tournamentId], references: [id])
   members        TeamMember[]
   homeMatches    BracketMatch[]      @relation("HomeMatches")
   awayMatches    BracketMatch[]      @relation("AwayMatches")
@@ -173,15 +174,14 @@ model Team {
 
 model TeamMember {
   id        String   @id @default(uuid()) @db.Uuid
-  teamId    String
-  userId    String
+  teamId    String              @db.Uuid
+  team      Team     @relation(fields: [teamId], references: [id])
+  userId    String              @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
   number    Int
   position  String?
   isCaptain Boolean  @default(false)
   joinedAt  DateTime @default(now())
-
-  team      Team     @relation(fields: [teamId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([teamId, number])
   @@unique([teamId, userId])
@@ -189,13 +189,13 @@ model TeamMember {
 }
 
 model BracketRound {
-  id         String             @id @default(uuid()) @db.Uuid
-  tournamentId String
+  id         String            @id @default(uuid()) @db.Uuid
+  tournamentId String          @db.Uuid
+  tournament Tournament        @relation(fields: [tournamentId], references: [id])
   roundNum   Int
   bracketType String?
-  createdAt  DateTime           @default(now())
+  createdAt  DateTime          @default(now())
 
-  tournament Tournament          @relation(fields: [tournamentId], references: [id])
   matches    BracketMatch[]
 
   @@unique([tournamentId, roundNum])
@@ -204,21 +204,21 @@ model BracketRound {
 
 model BracketMatch {
   id              String         @id @default(uuid()) @db.Uuid
-  roundId         String
+  roundId         String         @db.Uuid
   round           BracketRound   @relation(fields: [roundId], references: [id])
-  fieldId         String?
+  fieldId         String?         @db.Uuid
   field           Field?         @relation(fields: [fieldId], references: [id])
-  homeTeamId      String?
+  homeTeamId      String?         @db.Uuid
   homeTeam        Team?          @relation("HomeMatches", fields: [homeTeamId], references: [id])
-  awayTeamId      String?
+  awayTeamId      String?         @db.Uuid
   awayTeam        Team?          @relation("AwayMatches", fields: [awayTeamId], references: [id])
   homeScore       Int?
   awayScore       Int?
   scheduledAt     DateTime?
   startedAt       DateTime?
   finishedAt      DateTime?
-  refereeId       String?
-  referee         User?          @relation(fields: [refereeId], references: [id])
+  refereeId       String?         @db.Uuid
+  referee         User?          @relation("MatchReferee", fields: [refereeId], references: [id])
   status          MatchStatus    @default(SCHEDULED)
   forfeitTeamId   String?
   notes           String?
@@ -228,19 +228,20 @@ model BracketMatch {
   updatedAt       DateTime       @updatedAt
 
   events          MatchEvent[]
-  refereeAssign   RefereeAssignment?
+  refereeAssign   RefereeAssignment?  @relation("MatchRefAssignment")
   reports         RefereeReport[]
-  media           TournamentMedia[]
+  media           TournamentMedia[]    @relation("MatchMedia")
 
   @@map("bracket_matches")
 }
 
 model MatchEvent {
   id        String   @id @default(uuid()) @db.Uuid
-  matchId   String
+  matchId   String   @db.Uuid
   match     BracketMatch @relation(fields: [matchId], references: [id])
-  playerId  String?
-  teamId    String?
+  playerId  String?  @db.Uuid
+  player    User?    @relation(fields: [playerId], references: [id])
+  teamId    String?  @db.Uuid
   eventType String
   minute    Int
   extraMin  Int      @default(0)
@@ -252,21 +253,21 @@ model MatchEvent {
 }
 
 model Payment {
-  id                    String           @id @default(uuid()) @db.Uuid
-  tournamentId          String?
-  tournament            Tournament?      @relation(fields: [tournamentId], references: [id])
-  teamId                String?
-  team                  Team?            @relation(fields: [teamId], references: [id])
-  userId                String
-  user                  User             @relation(fields: [userId], references: [id])
+  id                    String          @id @default(uuid()) @db.Uuid
+  tournamentId          String?         @db.Uuid
+  tournament            Tournament?     @relation(fields: [tournamentId], references: [id])
+  teamId                String?         @db.Uuid
+  team                  Team?           @relation(fields: [teamId], references: [id])
+  userId                String          @db.Uuid
+  user                  User            @relation(fields: [userId], references: [id])
   amount                Decimal
-  currency              String           @default("MXN")
+  currency              String          @default("MXN")
   method                PaymentMethod
-  status                PaymentStatus    @default(PENDING)
+  status                PaymentStatus   @default(PENDING)
   externalId            String?
   receiptUrl            String?
   paidAt                DateTime?
-  createdAt             DateTime         @default(now())
+  createdAt             DateTime        @default(now())
 
   @@index([teamId])
   @@index([status])
@@ -275,9 +276,9 @@ model Payment {
 
 model RefereeAssignment {
   id          String      @id @default(uuid()) @db.Uuid
-  matchId     String
-  match       BracketMatch @relation(fields: [matchId], references: [id])
-  refereeId   String
+  matchId     String      @unique @db.Uuid
+  match       BracketMatch @relation("MatchRefAssignment", fields: [matchId], references: [id])
+  refereeId   String      @db.Uuid
   referee     User       @relation(fields: [refereeId], references: [id])
   secondRef   String?
   thirdRef    String?
@@ -293,9 +294,9 @@ model RefereeAssignment {
 
 model RefereeReport {
   id             String     @id @default(uuid()) @db.Uuid
-  matchId        String
+  matchId        String     @db.Uuid
   match          BracketMatch @relation(fields: [matchId], references: [id])
-  refereeId      String
+  refereeId      String     @db.Uuid
   referee        User       @relation(fields: [refereeId], references: [id])
   reportText     String?
   incidents      Json?
@@ -310,9 +311,10 @@ model RefereeReport {
 
 model Notification {
   id         String   @id @default(uuid()) @db.Uuid
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  tournamentId String?
+  userId     String   @db.Uuid
+  user       User     @relation("UserNotifications", fields: [userId], references: [id])
+  tournamentId String? @db.Uuid
+  tournament Tournament?  @relation("TournamentNotifications", fields: [tournamentId], references: [id])
   type       String
   title      String
   body       String
@@ -328,9 +330,11 @@ model Notification {
 
 model TournamentMedia {
   id          String   @id @default(uuid()) @db.Uuid
-  tournamentId String
-  matchId     String?
-  uploaderId  String
+  tournamentId String  @db.Uuid
+  tournament  Tournament  @relation("TournamentMedia", fields: [tournamentId], references: [id])
+  matchId     String?  @db.Uuid
+  match       BracketMatch? @relation("MatchMedia", fields: [matchId], references: [id])
+  uploaderId  String   @db.Uuid
   uploader    User     @relation("MediaUploaders", fields: [uploaderId], references: [id])
   url         String
   type        String
@@ -343,7 +347,8 @@ model TournamentMedia {
 
 model Sponsor {
   id          String   @id @default(uuid()) @db.Uuid
-  tournamentId String
+  tournamentId String  @db.Uuid
+  tournament  Tournament @relation(fields: [tournamentId], references: [id])
   name        String
   logo        String?
   tier        String
@@ -357,7 +362,8 @@ model Sponsor {
 
 model TournamentAnalytics {
   id          String   @id @default(uuid()) @db.Uuid
-  tournamentId String
+  tournamentId String  @db.Uuid
+  tournament  Tournament @relation(fields: [tournamentId], references: [id])
   date        DateTime
   visitors    Int
   pageViews   Int

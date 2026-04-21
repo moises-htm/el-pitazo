@@ -2,6 +2,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
+import { TournamentStatus } from "@prisma/client";
+
+const VALID_STATUSES = new Set<string>(Object.values(TournamentStatus));
 
 const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
 
@@ -20,18 +23,24 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method === "GET") {
-    const status = (req.query.status as string) || "ACTIVE";
+    const rawStatus = (req.query.status as string) || "ACTIVE";
+    const status: TournamentStatus = VALID_STATUSES.has(rawStatus)
+      ? (rawStatus as TournamentStatus)
+      : TournamentStatus.ACTIVE;
     const page = parseInt((req.query.page as string) || "1");
     const limit = parseInt((req.query.limit as string) || "20");
 
-    const tournaments = await prisma.tournament.findMany({
-      where: { status, isPublic: true },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { startDate: "desc" },
-      include: { creator: { select: { name: true } } },
-    });
-    const total = await prisma.tournament.count({ where: { status, isPublic: true } });
+    const where = { status, isPublic: true };
+    const [tournaments, total] = await Promise.all([
+      prisma.tournament.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { startDate: "desc" },
+        include: { creator: { select: { name: true } } },
+      }),
+      prisma.tournament.count({ where }),
+    ]);
 
     return res.json({ tournaments, total, page, limit });
   }
