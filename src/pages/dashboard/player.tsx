@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Trophy, Search, MapPin, DollarSign, Clock, CreditCard, Wallet } from "lucide-react";
+import { Trophy, Search, MapPin, DollarSign, Clock, Wallet, MessageCircle } from "lucide-react";
 import { LocationMap } from "@/components/location-map";
 import { CredentialCard } from "@/components/credential-card";
 import { SelfieCapture } from "@/components/selfie-capture";
@@ -21,9 +22,12 @@ function EmptyState({ icon, title, sub }: { icon: string; title: string; sub: st
 }
 
 export default function PlayerDashboard() {
+  const router = useRouter();
   const { user, setUser } = useAuthStore();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
+  const [transferingTeamId, setTransferingTeamId] = useState<string | null>(null);
+  const [transferTarget, setTransferTarget] = useState<string>("");
 
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [myTournaments, setMyTournaments] = useState<any[]>([]);
@@ -77,6 +81,20 @@ export default function PlayerDashboard() {
     finally { setLoading(false); }
   }
 
+  async function transferCaptain(teamId: string, newCaptainUserId: string) {
+    try {
+      await api(`/api/teams/${teamId}/transfer-captain`, {
+        method: "POST",
+        body: JSON.stringify({ newCaptainUserId }),
+      });
+      setTransferingTeamId(null);
+      setTransferTarget("");
+      await fetchMyTournaments();
+    } catch (e: any) {
+      alert(e.message);
+    }
+  }
+
   async function handleSelfieCapture(base64: string) {
     setSavingAvatar(true);
     try {
@@ -121,7 +139,16 @@ export default function PlayerDashboard() {
               <p className="text-gray-400 text-sm">Panel de Jugador</p>
             </div>
           </div>
-          <span className="text-yellow-400 text-2xl">⚽</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push("/chat")}
+              className="flex items-center gap-1.5 bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 text-green-400 hover:text-green-300 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+            >
+              <MessageCircle size={15} />
+              Chat
+            </button>
+            <span className="text-yellow-400 text-2xl">⚽</span>
+          </div>
         </div>
       </div>
 
@@ -205,6 +232,53 @@ export default function PlayerDashboard() {
                     <span className="text-gray-400 text-sm">Equipo: <span className="text-white">{t.teamName}</span></span>
                     {t.isCaptain && <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">Capitán</span>}
                   </div>
+
+                  {/* Captain Transfer — only show if captain and team has other members */}
+                  {t.isCaptain && t.members && t.members.length >= 2 && (
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      {transferingTeamId === t.teamId ? (
+                        <div className="space-y-2">
+                          <p className="text-yellow-400 text-sm font-medium">Transferir capitanía a:</p>
+                          <select
+                            value={transferTarget}
+                            onChange={(e) => setTransferTarget(e.target.value)}
+                            className="w-full bg-white/5 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500/50"
+                          >
+                            <option value="">Seleccionar jugador...</option>
+                            {t.members
+                              .filter((m: any) => m.userId !== user?.id)
+                              .map((m: any) => (
+                                <option key={m.userId} value={m.userId}>
+                                  {m.userName}
+                                </option>
+                              ))}
+                          </select>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => transferTarget && transferCaptain(t.teamId, transferTarget)}
+                              disabled={!transferTarget}
+                              className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                            >
+                              Confirmar transferencia
+                            </button>
+                            <button
+                              onClick={() => { setTransferingTeamId(null); setTransferTarget(""); }}
+                              className="bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white px-3 py-2 rounded-lg text-sm transition-all"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setTransferingTeamId(t.teamId)}
+                          className="text-xs text-yellow-400/70 hover:text-yellow-400 border border-yellow-500/20 hover:border-yellow-500/40 px-3 py-1.5 rounded-lg transition-all"
+                        >
+                          Transferir capitanía
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             )}

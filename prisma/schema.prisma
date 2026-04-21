@@ -420,3 +420,35 @@ model VerificationToken {
   @@unique([identifier, token])
   @@map("verification_tokens")
 }
+
+enum ChatRoomType {
+  LIGA
+  CAPTAIN_DM
+  TEAM
+}
+
+model ChatRoom {
+  id           String       @id @default(uuid()) @db.Uuid
+  type         ChatRoomType
+  tournamentId String?      @db.Uuid
+  teamId       String?      @db.Uuid
+  name         String
+  createdAt    DateTime     @default(now())
+
+  messages     ChatMessage[]
+
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id         String    @id @default(uuid()) @db.Uuid
+  roomId     String    @db.Uuid
+  room       ChatRoom  @relation(fields: [roomId], references: [id])
+  userId     String    @db.Uuid
+  userName   String
+  body       String
+  createdAt  DateTime  @default(now())
+
+  @@index([roomId, createdAt])
+  @@map("chat_messages")
+}

@@ -16,6 +16,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             tournament: {
               select: { id: true, name: true, status: true, startDate: true, endDate: true, type: true },
             },
+            members: {
+              include: {
+                user: { select: { id: true, name: true } },
+              },
+            },
           },
         },
       },
@@ -29,8 +34,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       startDate: m.team.tournament.startDate,
       endDate: m.team.tournament.endDate,
       type: m.team.tournament.type,
+      teamId: m.teamId,
       teamName: m.team.name,
       isCaptain: m.isCaptain,
+      members: m.team.members.map((tm) => ({
+        userId: tm.userId,
+        userName: tm.user.name,
+        isCaptain: tm.isCaptain,
+      })),
     }));
 
     return res.json({ tournaments });
