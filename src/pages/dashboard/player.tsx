@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Trophy, Search, MapPin, DollarSign, Clock, Wallet, MessageCircle } from "lucide-react";
+import { Trophy, Search, MapPin, DollarSign, Clock, Wallet, MessageCircle, Bell } from "lucide-react";
 import { LocationMap } from "@/components/location-map";
 import { CredentialCard } from "@/components/credential-card";
 import { SelfieCapture } from "@/components/selfie-capture";
@@ -141,6 +141,13 @@ export default function PlayerDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push("/settings/notifications")}
+              className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5"
+              title="Notificaciones"
+            >
+              <Bell size={18} />
+            </button>
             <button
               onClick={() => router.push("/chat")}
               className="flex items-center gap-1.5 bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 text-green-400 hover:text-green-300 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"

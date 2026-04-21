@@ -413,6 +413,30 @@ model ScheduleChangeRequest {
   @@map("schedule_change_requests")
 }
 
+model PushSubscription {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model NotificationPreference {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @db.Uuid
+  newMessage      Boolean  @default(true)
+  scheduleChange  Boolean  @default(true)
+  matchReminder   Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("notification_preferences")
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String  @db.Uuid
