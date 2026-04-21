@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
-import { ArrowLeft } from "lucide-react";
 import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
@@ -15,7 +14,6 @@ export default function LoginPage() {
     e.preventDefault();
     if (!form.password) return setError("Necesitas contraseña");
     if (!form.phone && !form.email) return setError("Necesitas teléfono o email");
-
     setLoading(true);
     setError("");
     try {
@@ -29,77 +27,105 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-950 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <button onClick={() => router.push("/")} className="text-gray-400 hover:text-white mb-6 flex items-center gap-1">
-          <ArrowLeft size={18} /> Volver
-        </button>
+    <div className="min-h-screen bg-pitch-grid flex">
+      {/* LEFT PANEL — hero text (hidden on mobile) */}
+      <div className="hidden lg:flex flex-col justify-center px-16 w-1/2 relative overflow-hidden">
+        {/* Decorative neon line */}
+        <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-neon to-transparent opacity-20" />
 
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white mb-1">Iniciar Sesión</h1>
-          <p className="text-blue-300">Bienvenido de vuelta</p>
+        <div className="animate-slide-up">
+          <div className="flex items-center gap-3 mb-12">
+            <span className="text-4xl">⚽</span>
+            <span className="font-display font-black text-2xl tracking-widest uppercase text-white">El Pitazo</span>
+          </div>
+
+          <h1 className="font-display font-black text-[7rem] leading-none uppercase tracking-tight text-white mb-4">
+            JUEGA.<br />
+            <span className="text-neon-glow">COMPITE.</span><br />
+            GANA.
+          </h1>
+
+          <p className="text-gray-400 text-xl mt-8 font-light max-w-xs">
+            La plataforma de torneos de fútbol amateur en Latinoamérica.
+          </p>
+
+          {/* Stats bar */}
+          <div className="flex gap-8 mt-12">
+            {[["1.2K+", "TORNEOS"], ["48K+", "JUGADORES"], ["150+", "CIUDADES"]].map(([num, label]) => (
+              <div key={label}>
+                <div className="score-number text-3xl text-neon">{num}</div>
+                <div className="text-gray-500 text-xs tracking-widest uppercase font-display">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT PANEL — form */}
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 lg:px-16">
+        {/* Mobile logo */}
+        <div className="lg:hidden flex items-center gap-2 mb-8 self-start">
+          <span className="text-2xl">⚽</span>
+          <span className="font-display font-black text-xl uppercase tracking-widest text-white">El Pitazo</span>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 space-y-4">
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">{error}</div>
-          )}
-
-          <div>
-            <label className="text-gray-300 text-sm block mb-1">Teléfono o Email</label>
-            <input
-              type="text"
-              value={form.email || form.phone}
-              onChange={(e) => {
-                const v = e.target.value.trim();
-                const isEmail = v.includes("@");
-                setForm({ ...form, email: isEmail ? v : "", phone: isEmail ? "" : v });
-              }}
-              autoComplete="username"
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
-              placeholder="+52 55 1234 5678 o tu@email.com"
-            />
+        <div className="w-full max-w-sm animate-fade-in">
+          <div className="mb-8">
+            <h2 className="font-display font-black text-5xl uppercase text-white mb-1">ENTRAR</h2>
+            <p className="text-gray-500 text-sm">Bienvenido de vuelta al campo</p>
           </div>
 
-          <div>
-            <label className="text-gray-300 text-sm block mb-1">Contraseña</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
-              placeholder="Tu contraseña"
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
-          >
-            {loading ? "Ingresando..." : "Iniciar Sesión"}
-          </button>
+            <div className="space-y-1">
+              <label className="text-gray-400 text-xs uppercase tracking-widest font-display">Teléfono o Email</label>
+              <input
+                type="text"
+                value={form.email || form.phone}
+                onChange={(e) => {
+                  const v = e.target.value.trim();
+                  const isEmail = v.includes("@");
+                  setForm({ ...form, email: isEmail ? v : "", phone: isEmail ? "" : v });
+                }}
+                autoComplete="username"
+                className="input-neon"
+                placeholder="+52 55 1234 5678 o tu@email.com"
+              />
+            </div>
 
-          <div className="text-center text-sm">
-            <span className="text-gray-400">¿No tienes cuenta? </span>
-            <button type="button" onClick={() => router.push("/auth/register")} className="text-blue-400 hover:text-blue-300 underline">
-              Regístrate
+            <div className="space-y-1">
+              <label className="text-gray-400 text-xs uppercase tracking-widest font-display">Contraseña</label>
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="input-neon"
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+            </div>
+
+            <button type="submit" disabled={loading} className="btn-neon w-full py-3.5 rounded-xl mt-2">
+              {loading ? "INGRESANDO..." : "INICIAR SESIÓN"}
             </button>
-          </div>
-        </form>
+          </form>
 
-        {/* Social login */}
-        <div className="mt-4">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-white/10" />
-            <span className="text-gray-500 text-xs uppercase tracking-wider">o continúa con</span>
+            <span className="text-gray-600 text-xs uppercase tracking-widest font-display">o</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
+
           <div className="space-y-3">
             {process.env.NEXT_PUBLIC_GOOGLE_ENABLED !== "false" && (
               <button
                 onClick={() => signIn("google", { callbackUrl: "/auth/oauth-callback" })}
-                className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white py-3 rounded-xl font-medium transition-all"
+                className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/8 border border-white/10 hover:border-white/20 text-white py-3 rounded-xl font-medium transition-all"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -120,6 +146,13 @@ export default function LoginPage() {
               Continuar con Apple
             </button>
           </div>
+
+          <p className="text-center text-sm mt-6 text-gray-500">
+            ¿No tienes cuenta?{" "}
+            <button onClick={() => router.push("/auth/register")} className="text-[#39FF14] hover:opacity-80 font-semibold">
+              Regístrate
+            </button>
+          </p>
         </div>
       </div>
     </div>

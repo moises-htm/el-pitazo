@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
-import { ArrowLeft } from "lucide-react";
 import { signIn } from "next-auth/react";
 
 export default function RegisterPage() {
@@ -56,126 +55,199 @@ export default function RegisterPage() {
     }
   };
 
-  const strengthColors = ["bg-red-500", "bg-yellow-500", "bg-blue-500", "bg-green-500"];
-  const strengthLabels = ["", "Débil", "Regular", "Fuerte"];
+  const strengthColors = ["", "bg-red-500", "bg-yellow-500", "bg-[#39FF14]"];
+  const strengthLabels = ["", "DÉBIL", "REGULAR", "FUERTE"];
+
+  const roles = [
+    { id: "PLAYER", label: "JUGADOR", icon: "⚽" },
+    { id: "REFEREE", label: "ÁRBITRO", icon: "🟨" },
+    { id: "ORGANIZER", label: "ORGANIZADOR", icon: "👔" },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-950 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <button onClick={() => router.push("/")} className="text-gray-400 hover:text-white mb-6 flex items-center gap-1">
-          <ArrowLeft size={18} /> Volver
-        </button>
+    <div className="min-h-screen bg-pitch-grid flex">
+      {/* LEFT PANEL — hero text (hidden on mobile) */}
+      <div className="hidden lg:flex flex-col justify-center px-16 w-1/2 relative overflow-hidden">
+        {/* Decorative neon line */}
+        <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-neon to-transparent opacity-20" />
 
-        <div className="mb-6">
-          <p className="text-gray-400 text-sm text-center mb-3">¿Cómo vas a usar El Pitazo?</p>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: "PLAYER", label: "Jugador", icon: "⚽" },
-              { id: "REFEREE", label: "Árbitro", icon: "🟨" },
-              { id: "ORGANIZER", label: "Organizador", icon: "👔" },
-            ].map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => setForm({ ...form, role: r.id })}
-                className={`p-3 rounded-xl border text-center transition-all ${
-                  form.role === r.id
-                    ? "bg-blue-600 border-blue-500 text-white"
-                    : "bg-white/5 border-white/10 text-gray-400 hover:border-white/30"
-                }`}
-              >
-                <div className="text-xl">{r.icon}</div>
-                <div className="text-xs mt-1 font-medium">{r.label}</div>
-              </button>
+        <div className="animate-slide-up">
+          <div className="flex items-center gap-3 mb-12">
+            <span className="text-4xl">⚽</span>
+            <span className="font-display font-black text-2xl tracking-widest uppercase text-white">El Pitazo</span>
+          </div>
+
+          <h1 className="font-display font-black text-[7rem] leading-none uppercase tracking-tight text-white mb-4">
+            ÚNETE.<br />
+            <span className="text-neon-glow">COMPITE.</span><br />
+            TRIUNFA.
+          </h1>
+
+          <p className="text-gray-400 text-xl mt-8 font-light max-w-xs">
+            Únete a miles de jugadores, árbitros y organizadores en toda Latinoamérica.
+          </p>
+
+          {/* Stats bar */}
+          <div className="flex gap-8 mt-12">
+            {[["1.2K+", "TORNEOS"], ["48K+", "JUGADORES"], ["150+", "CIUDADES"]].map(([num, label]) => (
+              <div key={label}>
+                <div className="score-number text-3xl text-neon">{num}</div>
+                <div className="text-gray-500 text-xs tracking-widest uppercase font-display">{label}</div>
+              </div>
             ))}
           </div>
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 space-y-4">
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">{error}</div>
-          )}
+      {/* RIGHT PANEL — form */}
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 lg:px-16 overflow-y-auto">
+        {/* Mobile logo */}
+        <div className="lg:hidden flex items-center gap-2 mb-8 self-start">
+          <span className="text-2xl">⚽</span>
+          <span className="font-display font-black text-xl uppercase tracking-widest text-white">El Pitazo</span>
+        </div>
 
-          <div>
-            <label className="text-gray-300 text-sm block mb-1">Nombre *</label>
-            <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white focus:outline-none transition-colors ${form.name.trim() ? "border-green-500/50 focus:border-green-500" : "border-white/10 focus:border-blue-500"}`}
-              placeholder="Tu nombre completo" />
+        <div className="w-full max-w-sm animate-fade-in">
+          <div className="mb-8">
+            <h2 className="font-display font-black text-5xl uppercase text-white mb-1">REGISTRO</h2>
+            <p className="text-gray-500 text-sm">Crea tu cuenta y entra al campo</p>
           </div>
 
-          <div>
-            <label className="text-gray-300 text-sm block mb-1">Teléfono o Email *</label>
-            <div className="grid grid-cols-2 gap-2">
-              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none text-sm"
-                placeholder="+52 55 1234 5678" />
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none text-sm"
-                placeholder="tu@email.com" />
+          {/* Role selector */}
+          <div className="mb-6">
+            <label className="text-gray-400 text-xs uppercase tracking-widest font-display block mb-3">¿Cómo vas a jugar?</label>
+            <div className="grid grid-cols-3 gap-2">
+              {roles.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, role: r.id })}
+                  className={`p-3 rounded-xl border text-center transition-all ${
+                    form.role === r.id
+                      ? "bg-[#39FF14]/10 border-[#39FF14] text-[#39FF14]"
+                      : "bg-white/5 border-white/10 text-gray-400 hover:border-white/30 hover:text-white"
+                  }`}
+                >
+                  <div className="text-xl">{r.icon}</div>
+                  <div className="text-xs mt-1 font-display font-bold tracking-wide">{r.label}</div>
+                </button>
+              ))}
             </div>
-            <p className="text-gray-500 text-xs mt-1">Necesitas al menos uno</p>
           </div>
 
-          <div>
-            <label className="text-gray-300 text-sm block mb-1">Contraseña *</label>
-            <input type="password" value={form.password}
-              onChange={(e) => { setForm({ ...form, password: e.target.value }); setPwStrength(calcStrength(e.target.value)); }}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
-              placeholder="Mínimo 6 caracteres" />
-            {form.password && (
-              <div className="mt-2 flex items-center gap-2">
-                <div className="flex gap-1 flex-1">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i < pwStrength ? strengthColors[pwStrength] : "bg-white/10"}`} />
-                  ))}
-                </div>
-                <span className="text-xs text-gray-400">{strengthLabels[pwStrength]}</span>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+                {error}
               </div>
             )}
-          </div>
 
-          <div>
-            <label className="text-gray-300 text-sm block mb-1">Confirmar contraseña *</label>
-            <input type="password" value={form.confirmPassword}
-              onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-              className={`w-full bg-white/5 border rounded-lg px-4 py-3 text-white focus:outline-none transition-colors ${
-                form.confirmPassword && form.password !== form.confirmPassword
-                  ? "border-red-500/50 focus:border-red-500"
-                  : form.confirmPassword && form.password === form.confirmPassword
-                  ? "border-green-500/50 focus:border-green-500"
-                  : "border-white/10 focus:border-blue-500"
-              }`}
-              placeholder="Repite la contraseña" />
-            {form.confirmPassword && form.password !== form.confirmPassword && (
-              <p className="text-red-400 text-xs mt-1">Las contraseñas no coinciden</p>
-            )}
-          </div>
+            <div className="space-y-1">
+              <label className="text-gray-400 text-xs uppercase tracking-widest font-display">Nombre completo</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="input-neon"
+                placeholder="Tu nombre completo"
+                autoComplete="name"
+              />
+            </div>
 
-          <button type="submit" disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white py-3 rounded-xl font-semibold transition-all disabled:opacity-50">
-            {loading ? "Creando cuenta..." : "Crear Cuenta"}
-          </button>
+            <div className="space-y-1">
+              <label className="text-gray-400 text-xs uppercase tracking-widest font-display">Teléfono</label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="input-neon"
+                placeholder="+52 55 1234 5678"
+                autoComplete="tel"
+              />
+            </div>
 
-          <div className="text-center text-sm">
-            <span className="text-gray-400">¿Ya tienes cuenta? </span>
-            <button type="button" onClick={() => router.push("/auth/login")} className="text-blue-400 hover:text-blue-300 underline">
-              Iniciar Sesión
+            <div className="space-y-1">
+              <label className="text-gray-400 text-xs uppercase tracking-widest font-display">Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="input-neon"
+                placeholder="tu@email.com"
+                autoComplete="email"
+              />
+              <p className="text-gray-600 text-xs mt-1">Necesitas al menos teléfono o email</p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-gray-400 text-xs uppercase tracking-widest font-display">Contraseña</label>
+              <input
+                type="password"
+                value={form.password}
+                onChange={(e) => {
+                  setForm({ ...form, password: e.target.value });
+                  setPwStrength(calcStrength(e.target.value));
+                }}
+                className="input-neon"
+                placeholder="Mínimo 6 caracteres"
+                autoComplete="new-password"
+              />
+              {form.password && (
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex gap-1 flex-1">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-all ${
+                          i < pwStrength ? strengthColors[pwStrength] : "bg-white/10"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs text-gray-400 font-display tracking-widest">
+                    {strengthLabels[pwStrength]}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-gray-400 text-xs uppercase tracking-widest font-display">Confirmar contraseña</label>
+              <input
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                className={`input-neon ${
+                  form.confirmPassword && form.password !== form.confirmPassword
+                    ? "border-red-500/60 focus:border-red-500"
+                    : form.confirmPassword && form.password === form.confirmPassword
+                    ? "border-[#39FF14]/60 focus:border-[#39FF14]"
+                    : ""
+                }`}
+                placeholder="Repite la contraseña"
+                autoComplete="new-password"
+              />
+              {form.confirmPassword && form.password !== form.confirmPassword && (
+                <p className="text-red-400 text-xs mt-1">Las contraseñas no coinciden</p>
+              )}
+            </div>
+
+            <button type="submit" disabled={loading} className="btn-neon w-full py-3.5 rounded-xl mt-2">
+              {loading ? "CREANDO CUENTA..." : "CREAR CUENTA"}
             </button>
-          </div>
-        </form>
+          </form>
 
-        {/* Social login */}
-        <div className="mt-4">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-white/10" />
-            <span className="text-gray-500 text-xs uppercase tracking-wider">o continúa con</span>
+            <span className="text-gray-600 text-xs uppercase tracking-widest font-display">o</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
+
           <div className="space-y-3">
             {process.env.NEXT_PUBLIC_GOOGLE_ENABLED !== "false" && (
               <button
                 onClick={() => signIn("google", { callbackUrl: "/auth/oauth-callback" })}
-                className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white py-3 rounded-xl font-medium transition-all"
+                className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/8 border border-white/10 hover:border-white/20 text-white py-3 rounded-xl font-medium transition-all"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -196,6 +268,13 @@ export default function RegisterPage() {
               Continuar con Apple
             </button>
           </div>
+
+          <p className="text-center text-sm mt-6 text-gray-500">
+            ¿Ya tienes cuenta?{" "}
+            <button onClick={() => router.push("/auth/login")} className="text-[#39FF14] hover:opacity-80 font-semibold">
+              Inicia sesión
+            </button>
+          </p>
         </div>
       </div>
     </div>
