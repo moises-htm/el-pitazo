@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import { toast } from "sonner";
 import { Trophy, Search, MapPin, DollarSign, Clock, Wallet, MessageCircle, Bell, Rss } from "lucide-react";
 import { LocationMap } from "@/components/location-map";
 import { CredentialCard } from "@/components/credential-card";
@@ -38,6 +39,9 @@ export default function PlayerDashboard() {
   const [error, setError] = useState("");
   const [showSelfie, setShowSelfie] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
+  const [joinTournament, setJoinTournament] = useState<any>(null);
+  const [joinTeamName, setJoinTeamName] = useState("");
+  const [joining, setJoining] = useState(false);
 
   useEffect(() => {
     if (activeTab === "browse") fetchTournaments();
@@ -93,6 +97,31 @@ export default function PlayerDashboard() {
       await fetchMyTournaments();
     } catch (e: any) {
       alert(e.message);
+    }
+  }
+
+  async function confirmJoin() {
+    if (!joinTournament) return;
+    const name = joinTeamName.trim();
+    if (name.length < 2) {
+      toast.error("Nombre de equipo muy corto");
+      return;
+    }
+    setJoining(true);
+    try {
+      await api(`/api/tournaments/${joinTournament.id}/join`, {
+        method: "POST",
+        body: JSON.stringify({ teamName: name }),
+      });
+      toast.success("¡Inscrito! Tu equipo fue registrado.");
+      setJoinTournament(null);
+      setJoinTeamName("");
+      setActiveTab("my");
+      await fetchMyTournaments();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : (e as any)?.message || "No se pudo inscribir");
+    } finally {
+      setJoining(false);
     }
   }
 
@@ -244,7 +273,7 @@ export default function PlayerDashboard() {
                         )}
                       </div>
                       <button
-                        onClick={() => alert("Inscripción disponible próximamente")}
+                        onClick={() => { setJoinTournament(t); setJoinTeamName(""); }}
                         className="btn-neon shrink-0 px-4 py-2 text-sm"
                       >
                         Inscribirse
@@ -430,6 +459,47 @@ export default function PlayerDashboard() {
           </div>
         )}
       </div>
+
+      {/* Inscribirse modal */}
+      {joinTournament && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4">
+          <div className="bg-gray-900 border border-white/10 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md p-6">
+            <h3 className="font-display font-black uppercase text-white text-lg mb-1">Inscribirse</h3>
+            <p className="text-gray-400 text-sm mb-4">{joinTournament.name}</p>
+
+            <label className="text-gray-300 text-sm block mb-1">Nombre de tu equipo</label>
+            <input
+              type="text"
+              value={joinTeamName}
+              onChange={(e) => setJoinTeamName(e.target.value)}
+              autoFocus
+              disabled={joining}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-[#39FF14] focus:outline-none"
+              placeholder="Ej: Los Indios"
+            />
+            <p className="text-gray-500 text-xs mt-2">
+              Serás el capitán. Podrás invitar jugadores después.
+            </p>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => { setJoinTournament(null); setJoinTeamName(""); }}
+                disabled={joining}
+                className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 py-3 rounded-xl font-display uppercase tracking-wide transition-all disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmJoin}
+                disabled={joining}
+                className="flex-1 btn-neon py-3 disabled:opacity-50"
+              >
+                {joining ? "Inscribiendo..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
