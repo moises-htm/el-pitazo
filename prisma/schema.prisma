@@ -249,6 +249,7 @@ model MatchEvent {
   createdAt DateTime @default(now())
 
   @@index([matchId])
+  @@index([playerId])
   @@map("match_events")
 }
 
@@ -289,6 +290,7 @@ model RefereeAssignment {
   createdAt   DateTime    @default(now())
 
   @@unique([matchId, refereeId])
+  @@index([refereeId])
   @@map("referee_assignments")
 }
 

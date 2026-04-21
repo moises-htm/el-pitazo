@@ -1,17 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
-
-function getUserId(req: NextApiRequest): string | null {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith("Bearer ")) return null;
-  try {
-    const payload = jwt.verify(auth.split(" ")[1], JWT_SECRET) as any;
-    return payload.userId;
-  } catch { return null; }
-}
+import { getUserId } from "@/lib/server-auth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
@@ -41,7 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       yellowCards: countMap["YELLOW_CARD"] || 0,
       redCards: countMap["RED_CARD"] || 0,
     });
-  } catch {
+  } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "No se pudo obtener las estadísticas" });
   }
 }
