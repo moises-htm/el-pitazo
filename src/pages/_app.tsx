@@ -3,13 +3,22 @@ import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import { useAuthStore } from "@/lib/auth";
+import { SplashScreen } from "@/components/splash-screen";
 
 export default function App({ Component, pageProps: { session, ...pageProps } }: { Component: any; pageProps: any }) {
   const hydrate = useAuthStore((s) => s.hydrate);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const seen = sessionStorage.getItem("splash-seen");
+      if (!seen) {
+        setShowSplash(true);
+        sessionStorage.setItem("splash-seen", "1");
+      }
+    }
     hydrate();
   }, [hydrate]);
 
@@ -39,6 +48,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
   return (
     <SessionProvider session={session}>
       <Toaster position="top-center" theme="dark" />
+      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
       <Component {...pageProps} />
       {showInstallBanner && (
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gray-900 border-t border-white/10 flex items-center justify-between gap-3 md:max-w-md md:mx-auto md:rounded-t-2xl">
