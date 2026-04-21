@@ -7,6 +7,7 @@ import { BracketView } from "@/components/bracket-view";
 import { FinancialDashboard } from "@/components/financial-dashboard";
 import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
@@ -139,9 +140,16 @@ export default function OrganizerDashboard() {
                         {t.startDate && <span>{new Date(t.startDate).toLocaleDateString("es-MX")}</span>}
                       </div>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded ${t.status === "ACTIVE" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}`}>
-                      {t.status}
-                    </span>
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <WhatsAppShareButton
+                        text={`¡Inscribe tu equipo en ${t.name}! ⚽ El torneo empieza pronto. Regístrate en https://elpitazo.app/tournaments/${t.id}`}
+                        label="Compartir torneo"
+                        compact={true}
+                      />
+                      <span className={`text-xs px-2 py-1 rounded ${t.status === "ACTIVE" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}`}>
+                        {t.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))

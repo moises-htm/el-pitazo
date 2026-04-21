@@ -6,6 +6,7 @@ import { Trophy, Search, MapPin, DollarSign, Clock, Wallet, MessageCircle } from
 import { LocationMap } from "@/components/location-map";
 import { CredentialCard } from "@/components/credential-card";
 import { SelfieCapture } from "@/components/selfie-capture";
+import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
@@ -232,6 +233,14 @@ export default function PlayerDashboard() {
                     <span className="text-gray-400 text-sm">Equipo: <span className="text-white">{t.teamName}</span></span>
                     {t.isCaptain && <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">Capitán</span>}
                   </div>
+                  {t.teamId && (
+                    <div className="mt-3">
+                      <WhatsAppShareButton
+                        text={`¡Únete a mi equipo ${t.teamName} en El Pitazo! ⚽🔥\n${typeof window !== "undefined" ? window.location.origin : "https://elpitazo.app"}/join/team?id=${t.teamId}`}
+                        label="Invitar jugadores"
+                      />
+                    </div>
+                  )}
 
                   {/* Captain Transfer — only show if captain and team has other members */}
                   {t.isCaptain && t.members && t.members.length >= 2 && (
