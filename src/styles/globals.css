@@ -2,51 +2,168 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 10, 10, 10;
-  --background-end-rgb: 15, 23, 42;
+  --neon: #39FF14;
+  --neon-dim: rgba(57, 255, 20, 0.15);
+  --pitch: #0a0a0a;
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --card-border: rgba(255, 255, 255, 0.08);
 }
 
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom, rgb(var(--background-start-rgb)), rgb(var(--background-end-rgb)));
+  color: #fff;
+  background: var(--pitch);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.2);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.3);
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(57,255,20,0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(57,255,20,0.4); }
+
+/* Prevent iOS zoom on inputs */
+input, select, textarea { font-size: 16px; }
+
+/* Display font utility */
+.font-display {
+  font-family: 'Barlow Condensed', Inter, system-ui, sans-serif;
 }
 
-/* Input styles */
-input, select, textarea {
-  font-size: 16px; /* prevent zoom on iOS */
+/* Neon text glow */
+.text-neon-glow {
+  color: var(--neon);
+  text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF1466;
 }
 
-/* Animations */
-@keyframes fade-in {
+/* Glassmorphism card */
+.card-glass {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+}
+
+/* Neon border glow on hover */
+.card-glow {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.card-glow:hover {
+  border-color: rgba(57, 255, 20, 0.4) !important;
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.1);
+}
+
+/* Neon button */
+.btn-neon {
+  background: var(--neon);
+  color: #000;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: none;
+  transition: all 0.15s;
+}
+.btn-neon:hover:not(:disabled) {
+  box-shadow: 0 0 16px #39FF14, 0 0 40px #39FF1444;
+  background: #4fff2a;
+}
+.btn-neon:active { transform: scale(0.98); }
+.btn-neon:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Neon input focus */
+.input-neon {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.input-neon:focus {
+  border-color: var(--neon);
+  box-shadow: 0 0 0 2px rgba(57,255,20,0.15);
+}
+
+/* Pitch grid background */
+.bg-pitch-grid {
+  background-color: var(--pitch);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(57,255,20,0.03) 0px,
+    rgba(57,255,20,0.03) 1px,
+    transparent 1px,
+    transparent 60px
+  ),
+  repeating-linear-gradient(
+    90deg,
+    rgba(57,255,20,0.03) 0px,
+    rgba(57,255,20,0.03) 1px,
+    transparent 1px,
+    transparent 60px
+  );
+}
+
+/* Scoreboard number style */
+.score-number {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Page transition */
+.page-enter {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
 
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(30px); }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-slide-up {
-  animation: slide-up 0.4s ease-out;
+
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+.animate-slide-up { animation: slideUp 0.4s ease-out both; }
+
+/* Holographic shimmer for credential card */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-holo {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(57,255,20,0.06) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* Tab active indicator */
+.tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--neon);
+  box-shadow: 0 0 8px var(--neon);
 }

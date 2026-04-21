@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#0a0a0a"/>
+
+  <!-- Neon green accent lines (soccer field lines) -->
+  <line x1="256" y1="0" x2="256" y2="512" stroke="#39FF14" stroke-width="2" opacity="0.15"/>
+  <circle cx="256" cy="256" r="80" fill="none" stroke="#39FF14" stroke-width="2" opacity="0.15"/>
+
+  <!-- Soccer ball - outer circle -->
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#39FF14" stroke-width="3"/>
+  <circle cx="256" cy="256" r="140" fill="rgba(57,255,20,0.08)"/>
+
+  <!-- Soccer ball pentagon pattern (simplified) -->
+  <!-- Center pentagon -->
+  <polygon points="256,186 303,221 285,276 227,276 209,221" fill="#39FF14" opacity="0.9"/>
+  <!-- Top pentagon -->
+  <polygon points="256,116 285,130 285,155 256,186 227,155 227,130" fill="none" stroke="#39FF14" stroke-width="2.5" opacity="0.7"/>
+  <!-- Bottom pentagon -->
+  <polygon points="256,326 285,295 303,321 285,360 227,360 209,321 227,295" fill="none" stroke="#39FF14" stroke-width="2.5" opacity="0.7"/>
+  <!-- Left pentagon -->
+  <polygon points="116,256 130,227 155,227 186,256 155,285 130,285" fill="none" stroke="#39FF14" stroke-width="2.5" opacity="0.7"/>
+  <!-- Right pentagon -->
+  <polygon points="396,256 382,227 357,227 326,256 357,285 382,285" fill="none" stroke="#39FF14" stroke-width="2.5" opacity="0.7"/>
+
+  <!-- "EP" text -->
+  <text x="256" y="440" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="52" fill="#39FF14" letter-spacing="8" opacity="0.9">EP</text>
+
+  <!-- Neon glow filter -->
+  <defs>
+    <filter id="neon-glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Glow on center pentagon -->
+  <polygon points="256,186 303,221 285,276 227,276 209,221" fill="#39FF14" opacity="0.9" filter="url(#neon-glow)"/>
+</svg>
