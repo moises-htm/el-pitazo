@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           include: {
             homeTeam: { select: { name: true, colorHex: true } },
             awayTeam: { select: { name: true, colorHex: true } },
-            field: { select: { name: true } },
+            field: { select: { name: true, lat: true, lng: true } },
             round: { include: { tournament: { select: { name: true } } } },
           },
         },
@@ -35,6 +35,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: a.matchId,
       time: a.match.scheduledAt?.toISOString() || null,
       field: a.match.field?.name || "Campo por definir",
+      fieldLat: a.match.field?.lat ?? null,
+      fieldLng: a.match.field?.lng ?? null,
+      fieldAddress: null,
       home: a.match.homeTeam?.name || "Por definir",
       away: a.match.awayTeam?.name || "Por definir",
       tournament: a.match.round.tournament.name,

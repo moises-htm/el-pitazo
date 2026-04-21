@@ -3,6 +3,7 @@ import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Clock, DollarSign, ClipboardList, TrendingUp, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { LocationMap } from "@/components/location-map";
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
@@ -122,6 +123,11 @@ export default function RefereeDashboard() {
                     <span className="flex items-center gap-1"><MapPin size={14} />{match.field}</span>
                     <span>{match.tournament}</span>
                   </div>
+                  {(match.fieldLat || match.fieldAddress) && (
+                    <div className="mt-3">
+                      <LocationMap lat={match.fieldLat} lng={match.fieldLng} address={match.fieldAddress} name={match.field} compact />
+                    </div>
+                  )}
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={() => toast.success("Asistencia confirmada")}

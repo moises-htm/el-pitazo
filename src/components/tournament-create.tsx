@@ -12,6 +12,8 @@ export function TournamentCreate({ onCreated }: { onCreated?: (t: any) => void }
     currency: "MXN",
     fieldLocation: "",
     fieldAddress: "",
+    fieldLat: "",
+    fieldLng: "",
     isPublic: true,
   });
   const [loading, setLoading] = useState(false);
@@ -34,10 +36,10 @@ export function TournamentCreate({ onCreated }: { onCreated?: (t: any) => void }
     try {
       const data = await api("/api/tournaments", {
         method: "POST",
-        body: JSON.stringify({ ...form, status: "DRAFT" }),
+        body: JSON.stringify({ ...form, status: "DRAFT", fieldLat: parseFloat(form.fieldLat) || null, fieldLng: parseFloat(form.fieldLng) || null }),
       });
       toast.success("¡Torneo creado!");
-      setForm({ name: "", type: "KNOCKOUT", maxTeams: 16, startDate: "", regFee: 500, currency: "MXN", fieldLocation: "", fieldAddress: "", isPublic: true });
+      setForm({ name: "", type: "KNOCKOUT", maxTeams: 16, startDate: "", regFee: 500, currency: "MXN", fieldLocation: "", fieldAddress: "", fieldLat: "", fieldLng: "", isPublic: true });
       onCreated?.(data.tournament);
     } catch (err: any) {
       toast.error(err.message || "Error al crear el torneo");
@@ -108,6 +110,18 @@ export function TournamentCreate({ onCreated }: { onCreated?: (t: any) => void }
             <input type="text" value={form.fieldAddress} onChange={(e) => setForm({ ...form, fieldAddress: e.target.value })}
               className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
               placeholder="Calle, colonia, ciudad" />
+          </div>
+          <div>
+            <label className="text-gray-300 text-sm block mb-1">Latitud (opcional)</label>
+            <input type="number" step="any" value={form.fieldLat} onChange={(e) => setForm({ ...form, fieldLat: e.target.value })}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none text-sm"
+              placeholder="19.4326" />
+          </div>
+          <div>
+            <label className="text-gray-300 text-sm block mb-1">Longitud (opcional)</label>
+            <input type="number" step="any" value={form.fieldLng} onChange={(e) => setForm({ ...form, fieldLng: e.target.value })}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none text-sm"
+              placeholder="-99.1332" />
           </div>
         </div>
         <button type="submit" disabled={loading}

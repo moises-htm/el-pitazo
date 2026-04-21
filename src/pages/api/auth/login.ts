@@ -27,6 +27,10 @@ export default async function handler(
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    if (!user.password) {
+      return res.status(401).json({ error: "Esta cuenta usa inicio de sesión social. Usa Google o Apple." });
+    }
+
     const valid = await bcrypt.compare(data.password, user.password);
     if (!valid) {
       return res.status(401).json({ error: "Invalid credentials" });

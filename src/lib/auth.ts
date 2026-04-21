@@ -13,6 +13,7 @@ interface User {
   country?: string;
   lang?: string;
   rating?: number;
+  avatar?: string;
 }
 
 interface AuthState {

@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Trophy, Search, MapPin, DollarSign, Clock, Loader2 } from "lucide-react";
+import { Trophy, Search, MapPin, DollarSign, Clock, CreditCard, Wallet } from "lucide-react";
+import { LocationMap } from "@/components/location-map";
+import { CredentialCard } from "@/components/credential-card";
+import { SelfieCapture } from "@/components/selfie-capture";
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
@@ -18,59 +21,70 @@ function EmptyState({ icon, title, sub }: { icon: string; title: string; sub: st
 }
 
 export default function PlayerDashboard() {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
 
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [myTournaments, setMyTournaments] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
+  const [credentials, setCredentials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showSelfie, setShowSelfie] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
 
   useEffect(() => {
     if (activeTab === "browse") fetchTournaments();
     if (activeTab === "my") fetchMyTournaments();
     if (activeTab === "stats") fetchStats();
+    if (activeTab === "credential") fetchCredentials();
   }, [activeTab]);
 
   async function fetchTournaments() {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const data = await api("/api/tournaments?status=ACTIVE&limit=20", { auth: false });
       setTournaments(data.tournaments || []);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
   }
 
   async function fetchMyTournaments() {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const data = await api("/api/player/tournaments");
       setMyTournaments(data.tournaments || []);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
   }
 
   async function fetchStats() {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const data = await api("/api/player/stats");
       setStats(data);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  async function fetchCredentials() {
+    setLoading(true); setError("");
+    try {
+      const data = await api("/api/player/credential");
+      setCredentials(data.credentials || []);
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  async function handleSelfieCapture(base64: string) {
+    setSavingAvatar(true);
+    try {
+      const data = await api("/api/player/avatar", { method: "POST", body: JSON.stringify({ avatar: base64 }) });
+      if (user) setUser({ ...user, avatar: data.avatar } as any);
+      setShowSelfie(false);
+    } catch (e: any) { alert(e.message); }
+    finally { setSavingAvatar(false); }
   }
 
   const filtered = tournaments.filter((t) =>
@@ -81,17 +95,31 @@ export default function PlayerDashboard() {
     { id: "browse", label: "Explorar" },
     { id: "my", label: "Mis Torneos" },
     { id: "stats", label: "Mis Stats" },
+    { id: "credential", label: "Credencial" },
   ];
 
   const typeLabel = (t: string) => t === "KNOCKOUT" ? "Eliminatoria" : t === "LEAGUE" ? "Liga" : t === "GROUPS" ? "Grupos+Elim" : "Swiss";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const avatar = (user as any)?.avatar;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-950">
+      {showSelfie && <SelfieCapture onCapture={handleSelfieCapture} onClose={() => setShowSelfie(false)} />}
+
       <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-white text-xl font-bold">Hola, {user?.name}</h1>
-            <p className="text-gray-400 text-sm">Panel de Jugador</p>
+          <div className="flex items-center gap-3">
+            {avatar ? (
+              <img src={avatar} alt={user?.name} className="w-10 h-10 rounded-full object-cover border-2 border-blue-500/40" />
+            ) : (
+              <button onClick={() => setShowSelfie(true)} className="w-10 h-10 rounded-full bg-gray-800 border-2 border-dashed border-gray-600 flex items-center justify-center text-gray-500 hover:border-blue-500 hover:text-blue-400 transition-colors" title="Agregar foto">
+                <span className="text-lg">👤</span>
+              </button>
+            )}
+            <div>
+              <h1 className="text-white text-xl font-bold">Hola, {user?.name}</h1>
+              <p className="text-gray-400 text-sm">Panel de Jugador</p>
+            </div>
           </div>
           <span className="text-yellow-400 text-2xl">⚽</span>
         </div>
@@ -140,6 +168,11 @@ export default function PlayerDashboard() {
                           {t.startDate && <span className="flex items-center gap-1"><Clock size={14} />{new Date(t.startDate).toLocaleDateString("es-MX")}</span>}
                           <span className="flex items-center gap-1"><DollarSign size={14} />{Number(t.regFee).toLocaleString("es-MX")} {t.currency}</span>
                         </div>
+                        {(t.fieldLat || t.fieldAddress) && (
+                          <div className="mt-3">
+                            <LocationMap lat={t.fieldLat} lng={t.fieldLng} address={t.fieldAddress} name={t.fieldLocation} compact />
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => alert("Inscripción disponible próximamente")}
@@ -205,6 +238,59 @@ export default function PlayerDashboard() {
               </div>
             ) : (
               <EmptyState icon="📊" title="Aún sin estadísticas" sub="Juega en torneos para acumular estadísticas" />
+            )}
+          </div>
+        )}
+
+        {activeTab === "credential" && (
+          <div className="space-y-4">
+            <h2 className="text-white font-semibold text-lg">Mi Credencial Digital</h2>
+
+            {/* Selfie gate */}
+            {!avatar && (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6 text-center">
+                <div className="text-4xl mb-3">📷</div>
+                <h3 className="text-white font-bold mb-2">Necesitas una foto para tu credencial</h3>
+                <p className="text-gray-400 text-sm mb-4">El árbitro necesita verificar tu identidad visualmente</p>
+                <button
+                  onClick={() => setShowSelfie(true)}
+                  className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+                >
+                  Tomar selfie ahora
+                </button>
+              </div>
+            )}
+
+            {loading ? (
+              Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-64" />)
+            ) : credentials.length === 0 ? (
+              <EmptyState icon="🪪" title="Sin credenciales" sub="Únete a un torneo para obtener tu credencial digital" />
+            ) : (
+              credentials.map((cred: any) => (
+                <div key={cred.id} className="space-y-3">
+                  <CredentialCard
+                    member={{ ...cred, user: { ...cred.user, avatar: avatar || cred.user.avatar } }}
+                    baseUrl={baseUrl}
+                  />
+                  <div className="flex gap-2">
+                    <a
+                      href={`/api/passes/apple-wallet/${cred.id}`}
+                      className="flex-1 flex items-center justify-center gap-2 bg-black hover:bg-gray-900 text-white py-2.5 rounded-xl font-semibold transition-all text-sm border border-white/20"
+                    >
+                      <Wallet size={16} />
+                      Apple Wallet
+                    </a>
+                    {avatar && (
+                      <button
+                        onClick={() => setShowSelfie(true)}
+                        className="bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white py-2.5 px-4 rounded-xl transition-all text-sm border border-white/10"
+                      >
+                        Actualizar foto
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
             )}
           </div>
         )}
