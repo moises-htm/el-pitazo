@@ -48,8 +48,13 @@ export default function LoginPage() {
             <label className="text-gray-300 text-sm block mb-1">Teléfono o Email</label>
             <input
               type="text"
-              value={form.phone || form.email}
-              onChange={(e) => setForm({ ...form, phone: e.target.value, email: "" })}
+              value={form.email || form.phone}
+              onChange={(e) => {
+                const v = e.target.value.trim();
+                const isEmail = v.includes("@");
+                setForm({ ...form, email: isEmail ? v : "", phone: isEmail ? "" : v });
+              }}
+              autoComplete="username"
               className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
               placeholder="+52 55 1234 5678 o tu@email.com"
             />
