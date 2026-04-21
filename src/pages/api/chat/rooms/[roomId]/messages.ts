@@ -2,21 +2,44 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import { getUserId } from "@/lib/server-auth";
 
+async function canAccessRoom(userId: string, roomId: string): Promise<boolean> {
+  const room = await prisma.chatRoom.findUnique({ where: { id: roomId } });
+  if (!room) return false;
+  if (room.teamId) {
+    const m = await prisma.teamMember.findFirst({ where: { teamId: room.teamId, userId } });
+    return !!m;
+  }
+  if (room.tournamentId) {
+    // LIGA room — user must be a captain in this tournament
+    const m = await prisma.teamMember.findFirst({
+      where: { userId, isCaptain: true, team: { tournamentId: room.tournamentId } },
+    });
+    return !!m;
+  }
+  return false;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   const roomId = req.query.roomId as string;
 
   if (req.method === "GET") {
+    const allowed = await canAccessRoom(userId, roomId);
+    if (!allowed) return res.status(403).json({ error: "Acceso denegado" });
+
     const messages = await prisma.chatMessage.findMany({
       where: { roomId },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       take: 50,
     });
-    return res.json({ messages });
+    return res.json({ messages: messages.reverse() });
   }
 
   if (req.method === "POST") {
+    const allowed = await canAccessRoom(userId, roomId);
+    if (!allowed) return res.status(403).json({ error: "Acceso denegado" });
+
     const { body } = req.body as { body: string };
     if (!body?.trim()) return res.status(400).json({ error: "Empty message" });
 
