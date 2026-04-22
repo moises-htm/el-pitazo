@@ -8,6 +8,8 @@ import { LocationMap } from "@/components/location-map";
 import { CredentialCard } from "@/components/credential-card";
 import { SelfieCapture } from "@/components/selfie-capture";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
+import { TeamPaymentStatus } from "@/components/team-payment-status";
+import { PaymentMethodSelector } from "@/components/payment-method-selector";
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
@@ -42,6 +44,7 @@ export default function PlayerDashboard() {
   const [joinTournament, setJoinTournament] = useState<any>(null);
   const [joinTeamName, setJoinTeamName] = useState("");
   const [joining, setJoining] = useState(false);
+  const [paymentTarget, setPaymentTarget] = useState<{ tournamentId: string; teamId: string; amount: number; currency: string; name: string } | null>(null);
 
   useEffect(() => {
     if (activeTab === "browse") fetchTournaments();
@@ -297,8 +300,8 @@ export default function PlayerDashboard() {
             ) : (
               myTournaments.map((t: any) => (
                 <div key={t.id} className="card-glass card-glow overflow-hidden">
-                  {t.team?.colorHex && (
-                    <div className="h-1" style={{ backgroundColor: t.team.colorHex }} />
+                  {t.teamColorHex && (
+                    <div className="h-1" style={{ backgroundColor: t.teamColorHex }} />
                   )}
                   <div className="p-5">
                     <h3 className="font-display font-black text-xl uppercase text-white">{t.name}</h3>
@@ -322,6 +325,15 @@ export default function PlayerDashboard() {
                           label="Invitar jugadores"
                         />
                       </div>
+                    )}
+                    {t.teamId && Number(t.regFee) > 0 && (
+                      <TeamPaymentStatus
+                        teamId={t.teamId}
+                        payStatus={t.teamPayStatus}
+                        regFee={Number(t.regFee)}
+                        currency={t.currency ?? "MXN"}
+                        onPay={t.isCaptain ? () => setPaymentTarget({ tournamentId: t.id, teamId: t.teamId, amount: Number(t.regFee), currency: t.currency ?? "MXN", name: t.name }) : undefined}
+                      />
                     )}
 
                     {/* Captain Transfer — only show if captain and team has other members */}
@@ -459,6 +471,33 @@ export default function PlayerDashboard() {
           </div>
         )}
       </div>
+
+      {/* Payment modal */}
+      {paymentTarget && (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4">
+          <div className="bg-gray-900 border border-white/10 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-display font-black uppercase text-white text-lg">Pago de inscripción</h3>
+                <p className="text-gray-400 text-sm">{paymentTarget.name}</p>
+              </div>
+              <button
+                onClick={() => setPaymentTarget(null)}
+                className="text-gray-500 hover:text-white transition-colors text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+            <PaymentMethodSelector
+              tournamentId={paymentTarget.tournamentId}
+              teamId={paymentTarget.teamId}
+              amount={paymentTarget.amount}
+              currency={paymentTarget.currency}
+              onComplete={() => { setPaymentTarget(null); fetchMyTournaments(); }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Inscribirse modal */}
       {joinTournament && (
