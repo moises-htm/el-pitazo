@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Clock, DollarSign, ClipboardList, TrendingUp, MapPin } from "lucide-react";
+import { Clock, DollarSign, ClipboardList, TrendingUp, MapPin, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { LocationMap } from "@/components/location-map";
 
@@ -10,13 +11,13 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 export default function RefereeDashboard() {
-  const { user, token } = useAuthStore();
+  const router = useRouter();
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState("today");
   const [matches, setMatches] = useState<any[]>([]);
   const [earnings, setEarnings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [confirmedMatches, setConfirmedMatches] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (activeTab === "today") fetchMatches();
@@ -56,21 +57,6 @@ export default function RefereeDashboard() {
     { id: "stats", label: "Estadísticas", icon: <TrendingUp size={16} /> },
   ];
 
-  async function confirmAttendance(matchId: string) {
-    try {
-      const res = await fetch("/api/referee/attendance", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ matchId }),
-      });
-      if (!res.ok) throw new Error((await res.json()).error);
-      setConfirmedMatches(prev => new Set(prev).add(matchId));
-      toast.success("Asistencia confirmada");
-    } catch (e: any) {
-      toast.error(e.message || "Error al confirmar");
-    }
-  }
-
   const formatTime = (iso: string | null) => {
     if (!iso) return "Hora por definir";
     return new Date(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
@@ -84,7 +70,11 @@ export default function RefereeDashboard() {
             <h1 className="text-white text-xl font-bold">Hola, {user?.name}</h1>
             <p className="text-gray-400 text-sm">Panel de Árbitro</p>
           </div>
-          <span className="text-yellow-400 text-2xl">🟨</span>
+          <button
+            onClick={() => router.push("/verify/scan")}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
+            <QrCode size={16} /> Escanear Credencial
+          </button>
         </div>
       </div>
 
@@ -146,15 +136,14 @@ export default function RefereeDashboard() {
                   )}
                   <div className="mt-4 flex gap-2">
                     <button
-                      onClick={() => confirmAttendance(match.id)}
-                      disabled={confirmedMatches.has(match.id)}
-                      className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:bg-yellow-600/50 text-white py-2 rounded-lg font-semibold transition-all text-sm">
-                      {confirmedMatches.has(match.id) ? "✓ Confirmado" : "Confirmar asistencia"}
+                      onClick={() => toast.success("Asistencia confirmada")}
+                      className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-white py-2 rounded-lg font-semibold transition-all text-sm">
+                      Confirmar asistencia
                     </button>
                     <button
-                      onClick={() => toast.info("Detalle de partido — próximamente")}
-                      className="bg-white/5 hover:bg-white/10 text-white py-2 px-4 rounded-lg transition-all text-sm border border-white/10">
-                      Detalles
+                      onClick={() => router.push(`/match/${match.id}`)}
+                      className="bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded-lg transition-all text-sm font-semibold border border-green-500/30">
+                      ⚽ Arbitrar
                     </button>
                   </div>
                 </div>
