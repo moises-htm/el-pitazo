@@ -10,12 +10,13 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 export default function RefereeDashboard() {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [activeTab, setActiveTab] = useState("today");
   const [matches, setMatches] = useState<any[]>([]);
   const [earnings, setEarnings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmedMatches, setConfirmedMatches] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (activeTab === "today") fetchMatches();
@@ -54,6 +55,21 @@ export default function RefereeDashboard() {
     { id: "earnings", label: "Ganancias", icon: <DollarSign size={16} /> },
     { id: "stats", label: "Estadísticas", icon: <TrendingUp size={16} /> },
   ];
+
+  async function confirmAttendance(matchId: string) {
+    try {
+      const res = await fetch("/api/referee/attendance", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ matchId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setConfirmedMatches(prev => new Set(prev).add(matchId));
+      toast.success("Asistencia confirmada");
+    } catch (e: any) {
+      toast.error(e.message || "Error al confirmar");
+    }
+  }
 
   const formatTime = (iso: string | null) => {
     if (!iso) return "Hora por definir";
@@ -130,9 +146,10 @@ export default function RefereeDashboard() {
                   )}
                   <div className="mt-4 flex gap-2">
                     <button
-                      onClick={() => toast.success("Asistencia confirmada")}
-                      className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-white py-2 rounded-lg font-semibold transition-all text-sm">
-                      Confirmar asistencia
+                      onClick={() => confirmAttendance(match.id)}
+                      disabled={confirmedMatches.has(match.id)}
+                      className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:bg-yellow-600/50 text-white py-2 rounded-lg font-semibold transition-all text-sm">
+                      {confirmedMatches.has(match.id) ? "✓ Confirmado" : "Confirmar asistencia"}
                     </button>
                     <button
                       onClick={() => toast.info("Detalle de partido — próximamente")}

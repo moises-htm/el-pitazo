@@ -1,11 +1,11 @@
 import type { NextApiRequest } from "next";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
-
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-  console.error("CRITICAL: JWT_SECRET env var is not set in production");
+  throw new Error("CRITICAL: JWT_SECRET env var must be set in production");
 }
+
+const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
 
 interface JwtPayload { userId: string }
 

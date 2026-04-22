@@ -24,11 +24,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const teamsPaid = teams.filter((t) => t.payStatus === "PAID").length;
     const teamsPending = teams.filter((t) => t.payStatus !== "PAID").length;
 
+    const refFeeResult = await prisma.refereeAssignment.aggregate({
+      _sum: { fee: true },
+      where: { paid: true, match: { round: { tournamentId: id } } },
+    });
+    const totalExpenses = Number(refFeeResult._sum.fee ?? 0);
+
     return res.json({
       totalIncome,
       pendingIncome,
-      totalExpenses: 0,
-      netIncome: totalIncome,
+      totalExpenses,
+      netIncome: totalIncome - totalExpenses,
       teamsPaid,
       teamsPending,
       payments,
