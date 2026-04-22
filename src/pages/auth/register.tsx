@@ -47,7 +47,7 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, ...payload } = form;
       await register(payload as any);
-      router.push("/dashboard");
+      router.push("/onboarding");
     } catch (err: any) {
       setError(err.message || "Error al registrarse");
     } finally {

@@ -75,6 +75,8 @@ model User {
   country   String   @default("MX")
   lang      String   @default("es")
   rating    Decimal  @default(0.00)
+  onboardingComplete Boolean  @default(false)
+  onboardingData     Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   emailVerified DateTime?
