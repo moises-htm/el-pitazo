@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         team: {
           include: {
             tournament: {
-              select: { id: true, name: true, status: true, startDate: true, endDate: true, type: true },
+              select: { id: true, name: true, status: true, startDate: true, endDate: true, type: true, regFee: true, currency: true },
             },
             members: {
               include: {
@@ -34,8 +34,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       startDate: m.team.tournament.startDate,
       endDate: m.team.tournament.endDate,
       type: m.team.tournament.type,
+      regFee: m.team.tournament.regFee,
+      currency: m.team.tournament.currency,
       teamId: m.teamId,
       teamName: m.team.name,
+      teamColorHex: m.team.colorHex ?? null,
+      teamPayStatus: m.team.payStatus,
       isCaptain: m.isCaptain,
       members: m.team.members.map((tm) => ({
         userId: tm.userId,

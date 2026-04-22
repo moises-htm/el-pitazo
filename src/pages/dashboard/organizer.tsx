@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import { TournamentCreate } from "@/components/tournament-create";
 import { TeamList } from "@/components/team-list";
 import { BracketView } from "@/components/bracket-view";
-import { FinancialDashboard } from "@/components/financial-dashboard";
+import { OrganizerPayoutDashboard } from "@/components/organizer-payout-dashboard";
 import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
@@ -159,7 +159,7 @@ export default function OrganizerDashboard() {
 
         {activeTab === "teams" && <TeamList tournamentId={selectedTournament?.id} />}
         {activeTab === "brackets" && <BracketView tournamentId={selectedTournament?.id} />}
-        {activeTab === "financial" && <FinancialDashboard tournamentId={selectedTournament?.id} />}
+        {activeTab === "financial" && <OrganizerPayoutDashboard tournamentId={selectedTournament?.id} />}
         {activeTab === "analytics" && (
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10 text-center">
             <BarChart3 size={48} className="mx-auto text-gray-500 mb-4" />
