@@ -5,7 +5,8 @@ import { TournamentCreate } from "@/components/tournament-create";
 import { TeamList } from "@/components/team-list";
 import { BracketView } from "@/components/bracket-view";
 import { FinancialDashboard } from "@/components/financial-dashboard";
-import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock } from "lucide-react";
+import { StandingsTable } from "@/components/standings-table";
+import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock, TrendingUp, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 
@@ -22,20 +23,25 @@ export default function OrganizerDashboard() {
   const [loading, setLoading] = useState(false);
   const [scheduleChanges, setScheduleChanges] = useState<any[]>([]);
   const [scheduleChangesLoading, setScheduleChangesLoading] = useState(false);
+  const [matchReports, setMatchReports] = useState<any[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
 
   const tabs = [
     { id: "tournaments", label: "Torneos", icon: <Trophy size={18} /> },
     { id: "teams", label: "Equipos", icon: <Users size={18} /> },
     { id: "brackets", label: "Cuadros", icon: <ClipboardList size={18} /> },
+    { id: "standings", label: "Tabla", icon: <TrendingUp size={18} /> },
     { id: "financial", label: "Finanzas", icon: <DollarSign size={18} /> },
     { id: "analytics", label: "Métricas", icon: <BarChart3 size={18} /> },
     { id: "schedule-changes", label: "Cambios de horario", icon: <Clock size={18} /> },
+    { id: "reports", label: "Reportes", icon: <FileText size={18} /> },
   ];
 
   useEffect(() => {
     if (activeTab === "tournaments") fetchTournaments();
     if (activeTab === "schedule-changes") fetchScheduleChanges();
-  }, [activeTab]);
+    if (activeTab === "reports" && selectedTournament) fetchMatchReports(selectedTournament.id);
+  }, [activeTab, selectedTournament]);
 
   async function fetchTournaments() {
     setLoading(true);
@@ -47,6 +53,32 @@ export default function OrganizerDashboard() {
       setTournaments([]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchMatchReports(tournamentId: string) {
+    setReportsLoading(true);
+    try {
+      // Fetch all rounds+matches with reports for this tournament
+      const data = await api(`/api/tournaments/${tournamentId}/bracket`);
+      const allMatches: any[] = [];
+      for (const round of data.rounds ?? []) {
+        for (const match of round.matches ?? []) {
+          if (match.status === "COMPLETED") {
+            try {
+              const rd = await api(`/api/match/${match.id}/report`);
+              allMatches.push({ ...match, report: rd.report });
+            } catch {
+              allMatches.push({ ...match, report: null });
+            }
+          }
+        }
+      }
+      setMatchReports(allMatches);
+    } catch {
+      setMatchReports([]);
+    } finally {
+      setReportsLoading(false);
     }
   }
 
@@ -159,12 +191,93 @@ export default function OrganizerDashboard() {
 
         {activeTab === "teams" && <TeamList tournamentId={selectedTournament?.id} />}
         {activeTab === "brackets" && <BracketView tournamentId={selectedTournament?.id} />}
+        {activeTab === "standings" && (
+          <div className="space-y-4">
+            <h2 className="text-white font-bold text-lg">Tabla de posiciones</h2>
+            {selectedTournament ? (
+              <StandingsTable tournamentId={selectedTournament.id} />
+            ) : (
+              <div className="bg-white/5 rounded-2xl p-8 border border-white/10 text-center">
+                <TrendingUp size={40} className="mx-auto text-gray-600 mb-3" />
+                <p className="text-gray-400 text-sm">Selecciona un torneo primero</p>
+              </div>
+            )}
+          </div>
+        )}
         {activeTab === "financial" && <FinancialDashboard tournamentId={selectedTournament?.id} />}
         {activeTab === "analytics" && (
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10 text-center">
             <BarChart3 size={48} className="mx-auto text-gray-500 mb-4" />
             <h3 className="text-white text-lg font-semibold mb-2">Métricas del Torneo</h3>
             <p className="text-gray-400">{selectedTournament ? "Próximamente" : "Selecciona un torneo primero"}</p>
+          </div>
+        )}
+
+        {activeTab === "reports" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-white font-bold text-lg">Reportes de árbitros</h2>
+              {selectedTournament && (
+                <button onClick={() => fetchMatchReports(selectedTournament.id)} className="text-gray-400 hover:text-white text-sm">
+                  Actualizar
+                </button>
+              )}
+            </div>
+            {!selectedTournament ? (
+              <div className="bg-white/5 rounded-2xl p-8 border border-white/10 text-center">
+                <FileText size={40} className="mx-auto text-gray-600 mb-3" />
+                <p className="text-gray-400 text-sm">Selecciona un torneo primero</p>
+              </div>
+            ) : reportsLoading ? (
+              Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-28" />)
+            ) : matchReports.length === 0 ? (
+              <div className="bg-white/5 rounded-2xl p-8 border border-white/10 text-center">
+                <FileText size={40} className="mx-auto text-gray-600 mb-3" />
+                <p className="text-gray-400 text-sm">Sin partidos finalizados todavía</p>
+              </div>
+            ) : (
+              matchReports.map((match: any) => (
+                <div key={match.id} className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-semibold text-sm">
+                        {match.homeTeam?.name ?? "TBD"} {match.homeScore ?? 0} — {match.awayScore ?? 0} {match.awayTeam?.name ?? "TBD"}
+                      </p>
+                      {match.finishedAt && (
+                        <p className="text-gray-500 text-xs mt-0.5">
+                          {new Date(match.finishedAt).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" })}
+                        </p>
+                      )}
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded ${match.report ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}`}>
+                      {match.report ? "Con reporte" : "Sin reporte"}
+                    </span>
+                  </div>
+                  {match.report ? (
+                    <div className="bg-white/5 rounded-xl p-3 space-y-1.5">
+                      {match.report.fieldCond && (
+                        <p className="text-gray-400 text-xs">Campo: <span className="text-white">{match.report.fieldCond}</span></p>
+                      )}
+                      {match.report.reportText && (
+                        <p className="text-gray-300 text-sm">{match.report.reportText}</p>
+                      )}
+                      {Array.isArray(match.report.incidents) && match.report.incidents.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-gray-500 text-xs mb-1">Incidentes: {match.report.incidents.length}</p>
+                          {match.report.incidents.map((inc: any, i: number) => (
+                            <div key={i} className="bg-red-500/10 rounded px-2 py-1 text-xs text-red-300 mb-1">
+                              {inc.type} {inc.minute ? `(min. ${inc.minute})` : ""}: {inc.description}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-xs">El árbitro aún no ha enviado el reporte.</p>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
 

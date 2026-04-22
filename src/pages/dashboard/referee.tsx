@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Clock, DollarSign, ClipboardList, TrendingUp, MapPin } from "lucide-react";
+import { Clock, DollarSign, ClipboardList, TrendingUp, MapPin, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { LocationMap } from "@/components/location-map";
 
@@ -10,6 +11,7 @@ function Skeleton({ className }: { className?: string }) {
 }
 
 export default function RefereeDashboard() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState("today");
   const [matches, setMatches] = useState<any[]>([]);
@@ -68,7 +70,11 @@ export default function RefereeDashboard() {
             <h1 className="text-white text-xl font-bold">Hola, {user?.name}</h1>
             <p className="text-gray-400 text-sm">Panel de Árbitro</p>
           </div>
-          <span className="text-yellow-400 text-2xl">🟨</span>
+          <button
+            onClick={() => router.push("/verify/scan")}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all">
+            <QrCode size={16} /> Escanear Credencial
+          </button>
         </div>
       </div>
 
@@ -135,9 +141,9 @@ export default function RefereeDashboard() {
                       Confirmar asistencia
                     </button>
                     <button
-                      onClick={() => toast.info("Detalle de partido — próximamente")}
-                      className="bg-white/5 hover:bg-white/10 text-white py-2 px-4 rounded-lg transition-all text-sm border border-white/10">
-                      Detalles
+                      onClick={() => router.push(`/match/${match.id}`)}
+                      className="bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded-lg transition-all text-sm font-semibold border border-green-500/30">
+                      ⚽ Arbitrar
                     </button>
                   </div>
                 </div>
