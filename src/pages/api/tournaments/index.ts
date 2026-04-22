@@ -51,11 +51,25 @@ export default async function handler(
 
     try {
       const data = JSON.parse(JSON.stringify(req.body)) as any;
+      const creatorId = (token as any).userId;
+      const { organizationId, ...rest } = data;
+
+      // If organizationId is provided, verify the user is ADMIN+ in that org
+      if (organizationId) {
+        const membership = await prisma.organizationMember.findUnique({
+          where: { organizationId_userId: { organizationId, userId: creatorId } },
+        });
+        if (!membership || !["OWNER", "ADMIN"].includes(membership.role)) {
+          return res.status(403).json({ error: "Sin permisos para crear torneos en esta organización" });
+        }
+      }
+
       const tournament = await prisma.tournament.create({
         data: {
-          ...data,
-          creatorId: (token as any).userId,
-          regFee: parseFloat(data.regFee) || 0,
+          ...rest,
+          creatorId,
+          regFee: parseFloat(rest.regFee) || 0,
+          ...(organizationId ? { organizationId } : {}),
         },
       });
       return res.json({ tournament });
