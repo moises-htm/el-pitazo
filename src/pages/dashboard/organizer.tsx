@@ -40,9 +40,8 @@ export default function OrganizerDashboard() {
   async function fetchTournaments() {
     setLoading(true);
     try {
-      const data = await api("/api/tournaments?status=DRAFT&limit=50");
-      const data2 = await api("/api/tournaments?status=ACTIVE&limit=50");
-      setTournaments([...(data.tournaments || []), ...(data2.tournaments || [])]);
+      const data = await api("/api/organizer/tournaments?limit=100", { auth: true });
+      setTournaments(data.tournaments || []);
     } catch {
       setTournaments([]);
     } finally {

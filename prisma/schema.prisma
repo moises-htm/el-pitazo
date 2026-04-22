@@ -13,6 +13,12 @@ enum Role {
   ORGANIZER
 }
 
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
 enum TournamentStatus {
   DRAFT
   ACTIVE
@@ -87,6 +93,8 @@ model User {
   tournamentMedia      TournamentMedia[]               @relation("MediaUploaders")
   events               MatchEvent[]
   feedPosts            FeedPost[]    @relation("FeedUploads")
+  createdOrgs          Organization[]              @relation("OrgCreator")
+  orgMemberships       OrganizationMember[]        @relation("OrgMembers")
 
   @@map("users")
 }
@@ -95,6 +103,8 @@ model Tournament {
   id             String              @id @default(uuid()) @db.Uuid
   creatorId      String              @db.Uuid
   creator        User                @relation("TournamentCreator", fields: [creatorId], references: [id])
+  organizationId String?             @db.Uuid
+  organization   Organization?       @relation(fields: [organizationId], references: [id])
   name           String
   description    String?
   type           BracketType
@@ -482,6 +492,34 @@ model FeedComment {
 
   @@index([postId])
   @@map("feed_comments")
+}
+
+model Organization {
+  id          String               @id @default(uuid()) @db.Uuid
+  name        String
+  logo        String?
+  createdById String               @db.Uuid
+  createdBy   User                 @relation("OrgCreator", fields: [createdById], references: [id])
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  members     OrganizationMember[]
+  tournaments Tournament[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId         String       @db.Uuid
+  user           User         @relation("OrgMembers", fields: [userId], references: [id])
+  role           OrgRole      @default(MEMBER)
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
 }
 
 model Account {
