@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
-import { Trophy, Search, MapPin, DollarSign, Clock, Wallet, MessageCircle, Bell, Rss } from "lucide-react";
+import { Trophy, Search, MapPin, DollarSign, Clock, Wallet } from "lucide-react";
 import { LocationMap } from "@/components/location-map";
 import { CredentialCard } from "@/components/credential-card";
 import { SelfieCapture } from "@/components/selfie-capture";
@@ -12,12 +11,12 @@ import { TeamPaymentStatus } from "@/components/team-payment-status";
 import { PaymentMethodSelector } from "@/components/payment-method-selector";
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
+  return <div className={`animate-pulse bg-white/8 rounded-2xl ${className}`} />;
 }
 
 function EmptyState({ icon, title, sub }: { icon: string; title: string; sub: string }) {
   return (
-    <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10 text-center">
+    <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 text-center">
       <div className="text-5xl mb-3">{icon}</div>
       <h3 className="font-display font-black uppercase text-white mb-1">{title}</h3>
       <p className="text-gray-400 text-sm">{sub}</p>
@@ -26,7 +25,6 @@ function EmptyState({ icon, title, sub }: { icon: string; title: string; sub: st
 }
 
 export default function PlayerDashboard() {
-  const router = useRouter();
   const { user, setUser } = useAuthStore();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("browse");
@@ -154,72 +152,21 @@ export default function PlayerDashboard() {
   const avatar = (user as any)?.avatar;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-950">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-950 animate-fade-in-up">
       {showSelfie && <SelfieCapture onCapture={handleSelfieCapture} onClose={() => setShowSelfie(false)} />}
-
-      {/* Header */}
-      <div className="bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/5 px-5 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {avatar ? (
-              <img
-                src={avatar}
-                alt={user?.name}
-                className="w-10 h-10 rounded-full object-cover border-2 border-[#39FF14]/40 cursor-pointer"
-                onClick={() => setShowSelfie(true)}
-              />
-            ) : (
-              <button
-                onClick={() => setShowSelfie(true)}
-                className="w-10 h-10 rounded-full bg-gray-800 border-2 border-dashed border-gray-600 flex items-center justify-center text-gray-500 hover:border-[#39FF14] hover:text-[#39FF14] transition-colors"
-                title="Agregar foto"
-              >
-                <span className="text-lg">👤</span>
-              </button>
-            )}
-            <div>
-              <p className="text-gray-500 text-xs font-display uppercase tracking-widest">PANEL DE JUGADOR</p>
-              <h1 className="font-display font-black text-2xl uppercase text-white">{user?.name}</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push("/feed")}
-              className="p-2 rounded-lg text-gray-400 hover:text-[#39FF14] hover:bg-[#39FF14]/10 transition-all"
-              title="Feed"
-            >
-              <Rss size={18} />
-            </button>
-            <button
-              onClick={() => router.push("/chat")}
-              className="p-2 rounded-lg text-gray-400 hover:text-[#39FF14] hover:bg-[#39FF14]/10 transition-all"
-              title="Chat"
-            >
-              <MessageCircle size={18} />
-            </button>
-            <button
-              onClick={() => router.push("/settings/notifications")}
-              className="p-2 rounded-lg text-gray-400 hover:text-[#39FF14] hover:bg-[#39FF14]/10 transition-all"
-              title="Notificaciones"
-            >
-              <Bell size={18} />
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Tab bar */}
       <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 px-5 py-3">
         <div className="max-w-6xl mx-auto">
-          <div className="flex gap-1 bg-white/5 rounded-xl p-1">
+          <div className="flex gap-1 p-1 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 mb-0">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-display uppercase tracking-wide transition-all flex-1 justify-center ${
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-display uppercase tracking-wide transition-all duration-300 flex-1 justify-center ${
                   activeTab === tab.id
-                    ? "bg-[#39FF14] text-black font-bold shadow-neon-sm"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                    : "text-gray-500 hover:text-gray-300"
                 }`}
               >
                 {tab.icon}{tab.label}
@@ -229,7 +176,7 @@ export default function PlayerDashboard() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-6 animate-fade-in">
+      <div className="max-w-6xl mx-auto p-6 animate-fade-in-up">
         {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm mb-4">{error}</div>}
 
         {/* Browse tab */}
@@ -242,18 +189,18 @@ export default function PlayerDashboard() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar torneos, equipos, campos..."
-                className="w-full input-neon rounded-xl pl-12 pr-4 py-3"
+                className="w-full input-neon rounded-2xl pl-12 pr-4 py-3"
               />
             </div>
             <div className="space-y-4">
-              <h2 className="font-display font-black uppercase text-white text-lg">Torneos disponibles</h2>
+              <h2 className="font-display font-black text-xl uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">Torneos disponibles</h2>
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32" />)
               ) : filtered.length === 0 ? (
                 <EmptyState icon="🏆" title="No hay torneos disponibles" sub={search ? "Intenta con otra búsqueda" : "Los torneos activos aparecerán aquí"} />
               ) : (
                 filtered.map((t: any) => (
-                  <div key={t.id} className="card-glass card-glow p-5">
+                  <div key={t.id} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 hover:scale-[1.02] hover:border-white/20 transition-all duration-300">
                     {t.colorHex && (
                       <div className="h-1 rounded-full mb-4 -mt-1" style={{ backgroundColor: t.colorHex }} />
                     )}
@@ -277,7 +224,7 @@ export default function PlayerDashboard() {
                       </div>
                       <button
                         onClick={() => { setJoinTournament(t); setJoinTeamName(""); }}
-                        className="btn-neon shrink-0 px-4 py-2 text-sm"
+                        className="btn-neon shrink-0 px-4 py-2 text-sm active:scale-95 transition-transform"
                       >
                         Inscribirse
                       </button>
@@ -292,7 +239,7 @@ export default function PlayerDashboard() {
         {/* My Tournaments tab */}
         {activeTab === "my" && (
           <div className="space-y-4">
-            <h2 className="font-display font-black uppercase text-white text-lg">Mis Torneos</h2>
+            <h2 className="font-display font-black text-xl uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">Mis Torneos</h2>
             {loading ? (
               Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-24" />)
             ) : myTournaments.length === 0 ? (
@@ -392,7 +339,7 @@ export default function PlayerDashboard() {
         {/* Stats tab */}
         {activeTab === "stats" && (
           <div>
-            <h2 className="font-display font-black uppercase text-white text-lg mb-4">Estadísticas</h2>
+            <h2 className="font-display font-black text-xl uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300 mb-4">Estadísticas</h2>
             {loading ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32" />)}
@@ -405,7 +352,7 @@ export default function PlayerDashboard() {
                   { value: stats.assists, label: "Asistencias" },
                   { value: stats.redCards, label: "Rojas" },
                 ].map((stat) => (
-                  <div key={stat.label} className="card-glass card-glow p-6 text-center">
+                  <div key={stat.label} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 text-center hover:border-green-500/30 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-300">
                     <div className="score-number text-6xl text-[#39FF14] mb-1">{stat.value}</div>
                     <div className="font-display text-xs uppercase tracking-widest text-gray-500">{stat.label}</div>
                   </div>
@@ -420,7 +367,7 @@ export default function PlayerDashboard() {
         {/* Credential tab */}
         {activeTab === "credential" && (
           <div className="space-y-4">
-            <h2 className="font-display font-black uppercase text-white text-lg">Mi Credencial Digital</h2>
+            <h2 className="font-display font-black text-xl uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">Mi Credencial Digital</h2>
 
             {/* Selfie gate */}
             {!avatar && (
@@ -502,7 +449,7 @@ export default function PlayerDashboard() {
       {/* Inscribirse modal */}
       {joinTournament && (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4">
-          <div className="bg-gray-900 border border-white/10 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md p-6">
+          <div className="glass border border-white/10 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-md p-6">
             <h3 className="font-display font-black uppercase text-white text-lg mb-1">Inscribirse</h3>
             <p className="text-gray-400 text-sm mb-4">{joinTournament.name}</p>
 
@@ -531,7 +478,7 @@ export default function PlayerDashboard() {
               <button
                 onClick={confirmJoin}
                 disabled={joining}
-                className="flex-1 btn-neon py-3 disabled:opacity-50"
+                className="flex-1 btn-neon py-3 disabled:opacity-50 active:scale-95 transition-transform"
               >
                 {joining ? "Inscribiendo..." : "Confirmar"}
               </button>

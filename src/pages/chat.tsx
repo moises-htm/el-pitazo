@@ -171,10 +171,10 @@ export default function ChatPage() {
       <div
         className={`${
           showRooms ? "flex" : "hidden"
-        } md:flex flex-col w-full md:w-80 border-r border-white/5 bg-[#111] shrink-0`}
+        } md:flex flex-col w-full md:w-80 shrink-0 backdrop-blur-xl bg-white/5 border-r border-white/5`}
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-white/5">
+        <div className="p-4 border-b border-white/5 font-display font-black uppercase tracking-wide text-sm">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-display font-black text-xl uppercase text-white">CHAT</h1>
@@ -211,9 +211,9 @@ export default function ChatPage() {
               <button
                 key={room.id}
                 onClick={() => selectRoom(room)}
-                className={`w-full text-left px-4 py-3.5 flex items-center gap-3 transition-all border-b border-white/[0.04] ${
+                className={`w-full text-left p-4 flex items-center gap-3 transition-all duration-200 border-b border-white/5 ${
                   selectedRoom?.id === room.id
-                    ? "bg-[#39FF14]/10 border-l-2 border-l-[#39FF14]"
+                    ? "bg-green-500/10 border-l-2 border-l-green-500"
                     : "hover:bg-white/5"
                 }`}
               >
@@ -236,15 +236,15 @@ export default function ChatPage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-display font-bold text-sm uppercase text-white truncate">
+                  <div className="font-display font-bold uppercase text-sm text-white truncate">
                     {room.name}
                   </div>
-                  <div className="text-xs text-gray-600 truncate mt-0.5 font-display uppercase tracking-wide">
-                    {room.type === "LIGA"
+                  <div className="text-gray-500 text-xs truncate mt-0.5">
+                    {room.lastMessage || (room.type === "LIGA"
                       ? "LIGA"
                       : room.type === "TEAM"
                       ? "EQUIPO"
-                      : "DM"}
+                      : "DM")}
                   </div>
                 </div>
               </button>
@@ -319,7 +319,7 @@ export default function ChatPage() {
         ) : (
           <>
             {/* Messages scroll area */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
               {loadingMessages ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -343,15 +343,10 @@ export default function ChatPage() {
                       className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[72%] rounded-2xl px-4 py-2.5 ${
+                        className={
                           isOwn
-                            ? "bg-[#39FF14] text-black rounded-br-sm"
-                            : "bg-white/[0.08] text-white rounded-bl-sm border border-white/5"
-                        }`}
-                        style={
-                          isOwn
-                            ? { boxShadow: "0 0 12px rgba(57,255,20,0.25)" }
-                            : {}
+                            ? "ml-auto max-w-[75%] bg-gradient-to-br from-green-500/30 to-emerald-600/20 border border-green-500/20 text-white rounded-3xl rounded-br-sm px-4 py-3 mb-1"
+                            : "mr-auto max-w-[75%] backdrop-blur-xl bg-white/5 border border-white/10 text-gray-200 rounded-3xl rounded-bl-sm px-4 py-3 mb-1"
                         }
                       >
                         {!isOwn && (
@@ -363,11 +358,7 @@ export default function ChatPage() {
                           </div>
                         )}
                         <p className="text-sm leading-snug">{msg.body}</p>
-                        <div
-                          className={`text-[10px] mt-1 ${
-                            isOwn ? "text-black/50" : "text-gray-600"
-                          }`}
-                        >
+                        <div className="text-[10px] text-gray-600 mt-0.5 px-1">
                           {formatTime(msg.createdAt)}
                         </div>
                       </div>
@@ -380,7 +371,7 @@ export default function ChatPage() {
             </div>
 
             {/* Input area */}
-            <div className="px-4 py-3 border-t border-white/5 bg-[#111]">
+            <div className="px-4 py-3 border-t border-white/5 backdrop-blur-xl bg-gray-900/90">
               <div className="flex items-end gap-2">
                 <textarea
                   value={input}
@@ -388,21 +379,16 @@ export default function ChatPage() {
                   onKeyDown={handleKeyDown}
                   placeholder="Escribe un mensaje..."
                   rows={1}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:border-[#39FF14]/40 focus:outline-none resize-none"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-green-500/50 transition-colors resize-none"
                   style={{ minHeight: "44px", maxHeight: "128px" }}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || sending}
-                  className="w-11 h-11 rounded-xl bg-[#39FF14] hover:bg-[#4fff2a] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all shrink-0"
-                  style={{
-                    boxShadow: input.trim()
-                      ? "0 0 12px rgba(57,255,20,0.4)"
-                      : "none",
-                  }}
+                  className="btn-neon px-4 py-3 rounded-2xl text-sm active:scale-95 transition-transform disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
                   aria-label="Enviar"
                 >
-                  <Send size={18} className="text-black" />
+                  <Send size={18} />
                 </button>
               </div>
             </div>

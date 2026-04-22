@@ -28,12 +28,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-pitch-grid flex">
+      {/* Animated background blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-green-500/5 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full bg-emerald-600/5 blur-3xl animate-pulse" style={{ animationDelay: "1.5s" }} />
+      </div>
+
       {/* LEFT PANEL — hero text (hidden on mobile) */}
       <div className="hidden lg:flex flex-col justify-center px-16 w-1/2 relative overflow-hidden">
         {/* Decorative neon line */}
         <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-neon to-transparent opacity-20" />
 
-        <div className="animate-slide-up">
+        <div className="animate-fade-in-up">
           <div className="flex items-center gap-3 mb-12">
             <span className="text-4xl">⚽</span>
             <span className="font-display font-black text-2xl tracking-widest uppercase text-white">El Pitazo</span>
@@ -64,12 +70,12 @@ export default function LoginPage() {
       {/* RIGHT PANEL — form */}
       <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 lg:px-16">
         {/* Mobile logo */}
-        <div className="lg:hidden flex items-center gap-2 mb-8 self-start">
+        <div className="lg:hidden flex items-center gap-2 mb-8 self-start animate-fade-in-up">
           <span className="text-2xl">⚽</span>
           <span className="font-display font-black text-xl uppercase tracking-widest text-white">El Pitazo</span>
         </div>
 
-        <div className="w-full max-w-sm animate-fade-in">
+        <div className="w-full max-w-sm animate-fade-in-up lg:glass lg:rounded-3xl lg:p-8">
           <div className="mb-8">
             <h2 className="font-display font-black text-5xl uppercase text-white mb-1">ENTRAR</h2>
             <p className="text-gray-500 text-sm">Bienvenido de vuelta al campo</p>
@@ -77,12 +83,12 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm animate-slide-in">
                 {error}
               </div>
             )}
 
-            <div className="space-y-1">
+            <div className="space-y-1 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
               <label className="text-gray-400 text-xs uppercase tracking-widest font-display">Teléfono o Email</label>
               <input
                 type="text"
@@ -98,7 +104,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
               <label className="text-gray-400 text-xs uppercase tracking-widest font-display">Contraseña</label>
               <input
                 type="password"
@@ -110,9 +116,11 @@ export default function LoginPage() {
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-neon w-full py-3.5 rounded-xl mt-2">
-              {loading ? "INGRESANDO..." : "INICIAR SESIÓN"}
-            </button>
+            <div className="animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+              <button type="submit" disabled={loading} className="btn-neon w-full py-3.5 rounded-2xl mt-2 active:scale-95 transition-transform">
+                {loading ? "INGRESANDO..." : "INICIAR SESIÓN"}
+              </button>
+            </div>
           </form>
 
           <div className="flex items-center gap-3 my-6">
@@ -125,7 +133,7 @@ export default function LoginPage() {
             {process.env.NEXT_PUBLIC_GOOGLE_ENABLED !== "false" && (
               <button
                 onClick={() => signIn("google", { callbackUrl: "/auth/oauth-callback" })}
-                className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/8 border border-white/10 hover:border-white/20 text-white py-3 rounded-xl font-medium transition-all"
+                className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-[1.02] active:scale-95"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -138,7 +146,7 @@ export default function LoginPage() {
             )}
             <button
               onClick={() => signIn("apple", { callbackUrl: "/auth/oauth-callback" })}
-              className="w-full flex items-center justify-center gap-3 bg-white text-gray-900 hover:bg-gray-100 py-3 rounded-xl font-medium transition-all"
+              className="w-full flex items-center justify-center gap-3 bg-white text-gray-900 hover:bg-gray-100 py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-[1.02] active:scale-95"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
@@ -149,7 +157,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm mt-6 text-gray-500">
             ¿No tienes cuenta?{" "}
-            <button onClick={() => router.push("/auth/register")} className="text-[#39FF14] hover:opacity-80 font-semibold">
+            <button onClick={() => router.push("/auth/register")} className="text-[#39FF14] hover:opacity-80 font-semibold transition-opacity">
               Regístrate
             </button>
           </p>
