@@ -2,13 +2,12 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
-import { Trophy, Search, MapPin, DollarSign, Clock, Wallet } from "lucide-react";
+import { Trophy, Search, MapPin, DollarSign, Clock, Wallet, MessageCircle, Bell, Rss, Play, ChevronDown } from "lucide-react";
 import { LocationMap } from "@/components/location-map";
 import { CredentialCard } from "@/components/credential-card";
 import { SelfieCapture } from "@/components/selfie-capture";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
-import { TeamPaymentStatus } from "@/components/team-payment-status";
-import { PaymentMethodSelector } from "@/components/payment-method-selector";
+import Link from "next/link";
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/8 rounded-2xl ${className}`} />;
@@ -44,6 +43,12 @@ export default function PlayerDashboard() {
   const [joining, setJoining] = useState(false);
   const [paymentTarget, setPaymentTarget] = useState<{ tournamentId: string; teamId: string; amount: number; currency: string; name: string } | null>(null);
 
+  // Discovery filters
+  const [filterType, setFilterType] = useState("");
+  const [filterFeeRange, setFilterFeeRange] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilters, setShowFilters] = useState(false);
+
   useEffect(() => {
     if (activeTab === "browse") fetchTournaments();
     if (activeTab === "my") fetchMyTournaments();
@@ -51,10 +56,21 @@ export default function PlayerDashboard() {
     if (activeTab === "credential") fetchCredentials();
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === "browse") fetchTournaments();
+  }, [filterType, filterFeeRange, sortBy, search]);
+
   async function fetchTournaments() {
     setLoading(true); setError("");
     try {
-      const data = await api("/api/tournaments?status=ACTIVE&limit=20", { auth: false });
+      const params = new URLSearchParams({ status: "ACTIVE", limit: "30", sortBy });
+      if (search) params.set("q", search);
+      if (filterType) params.set("type", filterType);
+      if (filterFeeRange === "free") { params.set("maxFee", "0"); }
+      else if (filterFeeRange === "low") { params.set("minFee", "1"); params.set("maxFee", "200"); }
+      else if (filterFeeRange === "mid") { params.set("minFee", "200"); params.set("maxFee", "500"); }
+      else if (filterFeeRange === "high") { params.set("minFee", "500"); }
+      const data = await api(`/api/tournaments/search?${params}`, { auth: false });
       setTournaments(data.tournaments || []);
     } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
@@ -136,10 +152,6 @@ export default function PlayerDashboard() {
     finally { setSavingAvatar(false); }
   }
 
-  const filtered = tournaments.filter((t) =>
-    !search || t.name?.toLowerCase().includes(search.toLowerCase()) || t.fieldLocation?.toLowerCase().includes(search.toLowerCase())
-  );
-
   const tabs = [
     { id: "browse", label: "Explorar", icon: <Search size={14} /> },
     { id: "my", label: "Mis Torneos", icon: <Trophy size={14} /> },
@@ -182,25 +194,116 @@ export default function PlayerDashboard() {
         {/* Browse tab */}
         {activeTab === "browse" && (
           <>
-            <div className="mb-6 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar torneos, equipos, campos..."
-                className="w-full input-neon rounded-2xl pl-12 pr-4 py-3"
-              />
+            <div className="mb-4 space-y-3">
+              {/* Search bar */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar torneos, campos..."
+                  className="w-full input-neon rounded-xl pl-12 pr-4 py-3"
+                />
+              </div>
+
+              {/* Filter toggle */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => setShowFilters((v) => !v)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-display uppercase tracking-wide transition-all ${showFilters ? "border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10" : "border-white/20 text-gray-400 hover:border-white/40"}`}
+                >
+                  Filtros <ChevronDown size={12} className={showFilters ? "rotate-180 transition-transform" : "transition-transform"} />
+                </button>
+                {/* Active filter chips */}
+                {filterType && (
+                  <button onClick={() => setFilterType("")} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#39FF14]/10 border border-[#39FF14]/30 text-[#39FF14] text-xs font-display uppercase">
+                    {filterType === "KNOCKOUT" ? "Eliminatoria" : filterType === "LEAGUE" ? "Liga" : "Grupos"} ×
+                  </button>
+                )}
+                {filterFeeRange && (
+                  <button onClick={() => setFilterFeeRange("")} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#39FF14]/10 border border-[#39FF14]/30 text-[#39FF14] text-xs font-display uppercase">
+                    {filterFeeRange === "free" ? "Gratis" : filterFeeRange === "low" ? "$1-200" : filterFeeRange === "mid" ? "$200-500" : "$500+"} ×
+                  </button>
+                )}
+              </div>
+
+              {/* Filter panel */}
+              {showFilters && (
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+                  <div>
+                    <p className="text-gray-500 text-xs font-display uppercase tracking-wide mb-2">Tipo</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "", label: "Todos" },
+                        { value: "LEAGUE", label: "Liga" },
+                        { value: "KNOCKOUT", label: "Eliminatoria" },
+                        { value: "GROUPS", label: "Grupos" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setFilterType(opt.value)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-display uppercase tracking-wide transition-all ${filterType === opt.value ? "bg-[#39FF14] text-black" : "bg-white/5 border border-white/10 text-gray-400 hover:border-white/30"}`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs font-display uppercase tracking-wide mb-2">Cuota</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "", label: "Cualquiera" },
+                        { value: "free", label: "Gratis" },
+                        { value: "low", label: "$1-200" },
+                        { value: "mid", label: "$200-500" },
+                        { value: "high", label: "$500+" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setFilterFeeRange(opt.value)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-display uppercase tracking-wide transition-all ${filterFeeRange === opt.value ? "bg-[#39FF14] text-black" : "bg-white/5 border border-white/10 text-gray-400 hover:border-white/30"}`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-gray-500 text-xs font-display uppercase tracking-wide mb-2">Ordenar por</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "newest", label: "Más recientes" },
+                        { value: "soonest", label: "Más próximos" },
+                        { value: "cheapest", label: "Más baratos" },
+                        { value: "popular", label: "Más populares" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setSortBy(opt.value)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-display uppercase tracking-wide transition-all ${sortBy === opt.value ? "bg-[#39FF14] text-black" : "bg-white/5 border border-white/10 text-gray-400 hover:border-white/30"}`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
+
             <div className="space-y-4">
               <h2 className="font-display font-black text-xl uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">Torneos disponibles</h2>
               {loading ? (
                 Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32" />)
-              ) : filtered.length === 0 ? (
+              ) : tournaments.length === 0 ? (
                 <EmptyState icon="🏆" title="No hay torneos disponibles" sub={search ? "Intenta con otra búsqueda" : "Los torneos activos aparecerán aquí"} />
               ) : (
-                filtered.map((t: any) => (
-                  <div key={t.id} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 hover:scale-[1.02] hover:border-white/20 transition-all duration-300">
+                tournaments.map((t: any) => (
+                  <div key={t.id} className="card-glass card-glow p-5">
                     {t.colorHex && (
                       <div className="h-1 rounded-full mb-4 -mt-1" style={{ backgroundColor: t.colorHex }} />
                     )}
@@ -268,7 +371,7 @@ export default function PlayerDashboard() {
                     {t.teamId && (
                       <div className="mt-3">
                         <WhatsAppShareButton
-                          text={`¡Únete a mi equipo ${t.teamName} en El Pitazo! ⚽🔥\n${typeof window !== "undefined" ? window.location.origin : "https://elpitazo.app"}/join/team?id=${t.teamId}`}
+                          text={`¡Únete a mi equipo ${t.teamName} en El Pitazo! ⚽🔥\nhttps://elpitazo.app/join/${t.teamId}`}
                           label="Invitar jugadores"
                         />
                       </div>
@@ -281,6 +384,25 @@ export default function PlayerDashboard() {
                         currency={t.currency ?? "MXN"}
                         onPay={t.isCaptain ? () => setPaymentTarget({ tournamentId: t.id, teamId: t.teamId, amount: Number(t.regFee), currency: t.currency ?? "MXN", name: t.name }) : undefined}
                       />
+                    )}
+
+                    {/* Team members with highlights links */}
+                    {t.members && t.members.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-white/10">
+                        <p className="text-gray-500 text-xs font-display uppercase tracking-wide mb-2">Jugadores</p>
+                        <div className="flex flex-wrap gap-2">
+                          {t.members.map((m: any) => (
+                            <Link
+                              key={m.userId}
+                              href={`/player/${m.userId}/highlights`}
+                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 hover:border-[#39FF14]/30 hover:bg-[#39FF14]/5 transition-all group"
+                            >
+                              <span className="text-gray-300 text-xs font-medium">{m.userName}</span>
+                              <Play size={10} className="text-gray-600 group-hover:text-[#39FF14] transition-colors" />
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
                     )}
 
                     {/* Captain Transfer — only show if captain and team has other members */}

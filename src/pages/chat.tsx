@@ -49,55 +49,48 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [showRooms, setShowRooms] = useState(true); // mobile: show room list vs chat
+  const [showRooms, setShowRooms] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const selectedRoomRef = useRef<ChatRoom | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const sseErrorCountRef = useRef(0);
+  const sseActiveRef = useRef(false);
 
-  // Keep ref in sync for polling closure
   useEffect(() => {
     selectedRoomRef.current = selectedRoom;
   }, [selectedRoom]);
 
-  // Hydrate auth on mount
   useEffect(() => {
     if (!hydrated) hydrate();
   }, [hydrated, hydrate]);
 
-  // Auth guard
   useEffect(() => {
     if (hydrated && !token) {
       router.replace("/auth/login");
     }
   }, [hydrated, token, router]);
 
-  // Load rooms
   useEffect(() => {
     if (!token) return;
     fetchRooms();
   }, [token]);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Polling — 3s, skips when tab hidden
+  // Cleanup all real-time connections on unmount
   useEffect(() => {
-    if (pollingRef.current) clearInterval(pollingRef.current);
-    if (!selectedRoom) return;
-
-    pollingRef.current = setInterval(() => {
-      if (document.hidden) return;
-      const room = selectedRoomRef.current;
-      if (room) fetchMessages(room.id, false);
-    }, 3000);
-
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
-  }, [selectedRoom]);
+  }, []);
 
   async function fetchRooms() {
     setLoadingRooms(true);
@@ -111,23 +104,103 @@ export default function ChatPage() {
     }
   }
 
-  const fetchMessages = useCallback(async (roomId: string, showLoader = true) => {
-    if (showLoader) setLoadingMessages(true);
-    try {
-      const data = await api<{ messages: ChatMessage[] }>(`/api/chat/rooms/${roomId}/messages`);
-      setMessages(data.messages || []);
-    } catch {
-      // ignore
-    } finally {
-      if (showLoader) setLoadingMessages(false);
-    }
-  }, []);
+  const fetchMessages = useCallback(
+    async (roomId: string, showLoader = true): Promise<ChatMessage[]> => {
+      if (showLoader) setLoadingMessages(true);
+      try {
+        const data = await api<{ messages: ChatMessage[] }>(
+          `/api/chat/rooms/${roomId}/messages`
+        );
+        const msgs = data.messages || [];
+        setMessages(msgs);
+        return msgs;
+      } catch {
+        return [];
+      } finally {
+        if (showLoader) setLoadingMessages(false);
+      }
+    },
+    []
+  );
 
-  function selectRoom(room: ChatRoom) {
+  const startPolling = useCallback(
+    (roomId: string) => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      pollingRef.current = setInterval(() => {
+        if (document.hidden) return;
+        const room = selectedRoomRef.current;
+        if (room?.id === roomId) fetchMessages(roomId, false);
+      }, 3000);
+    },
+    [fetchMessages]
+  );
+
+  const setupSse = useCallback(
+    (roomId: string, since?: string) => {
+      if (!token || typeof EventSource === "undefined") return false;
+
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+
+      sseErrorCountRef.current = 0;
+      sseActiveRef.current = true;
+
+      const params = new URLSearchParams({ token });
+      if (since) params.set("since", since);
+
+      const es = new EventSource(`/api/chat/rooms/${roomId}/stream?${params}`);
+      eventSourceRef.current = es;
+
+      es.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data) as ChatMessage;
+          setMessages((prev) =>
+            prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
+          );
+        } catch {
+          // ignore parse errors
+        }
+      };
+
+      es.onerror = () => {
+        sseErrorCountRef.current += 1;
+        if (sseErrorCountRef.current >= 3) {
+          es.close();
+          eventSourceRef.current = null;
+          sseActiveRef.current = false;
+          // Fall back to polling
+          const room = selectedRoomRef.current;
+          if (room?.id === roomId) startPolling(roomId);
+        }
+      };
+
+      return true;
+    },
+    [token, startPolling]
+  );
+
+  async function selectRoom(room: ChatRoom) {
     setSelectedRoom(room);
     setMessages([]);
-    fetchMessages(room.id);
-    setShowRooms(false); // mobile: switch to chat view
+    setShowRooms(false);
+
+    // Tear down previous real-time connections
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+    sseActiveRef.current = false;
+
+    const msgs = await fetchMessages(room.id);
+    const latest = msgs[msgs.length - 1];
+
+    const sseStarted = setupSse(room.id, latest?.createdAt);
+    if (!sseStarted) {
+      startPolling(room.id);
+    }
   }
 
   async function sendMessage() {
@@ -140,9 +213,12 @@ export default function ChatPage() {
         method: "POST",
         body: JSON.stringify({ body }),
       });
-      await fetchMessages(selectedRoom.id, false);
+      // Only re-fetch if SSE is not delivering messages
+      if (!sseActiveRef.current) {
+        await fetchMessages(selectedRoom.id, false);
+      }
     } catch {
-      setInput(body); // restore on error
+      setInput(body);
     } finally {
       setSending(false);
     }
@@ -217,7 +293,6 @@ export default function ChatPage() {
                     : "hover:bg-white/5"
                 }`}
               >
-                {/* Room type icon */}
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                     room.type === "LIGA"
@@ -239,12 +314,8 @@ export default function ChatPage() {
                   <div className="font-display font-bold uppercase text-sm text-white truncate">
                     {room.name}
                   </div>
-                  <div className="text-gray-500 text-xs truncate mt-0.5">
-                    {room.lastMessage || (room.type === "LIGA"
-                      ? "LIGA"
-                      : room.type === "TEAM"
-                      ? "EQUIPO"
-                      : "DM")}
+                  <div className="text-xs text-gray-600 truncate mt-0.5 font-display uppercase tracking-wide">
+                    {room.type === "LIGA" ? "LIGA" : room.type === "TEAM" ? "EQUIPO" : "DM"}
                   </div>
                 </div>
               </button>
@@ -366,7 +437,6 @@ export default function ChatPage() {
                   );
                 })
               )}
-              {/* Scroll anchor */}
               <div ref={messagesEndRef} />
             </div>
 

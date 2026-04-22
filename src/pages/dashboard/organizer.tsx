@@ -5,8 +5,8 @@ import { TournamentCreate } from "@/components/tournament-create";
 import { TeamList } from "@/components/team-list";
 import { BracketView } from "@/components/bracket-view";
 import { FinancialDashboard } from "@/components/financial-dashboard";
-import { StandingsTable } from "@/components/standings-table";
-import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock, TrendingUp, FileText } from "lucide-react";
+import { AnalyticsDashboard } from "@/components/analytics-dashboard";
+import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 
@@ -211,11 +211,18 @@ export default function OrganizerDashboard() {
         )}
         {activeTab === "financial" && <FinancialDashboard tournamentId={selectedTournament?.id} />}
         {activeTab === "analytics" && (
-          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-blue-500/20 transition-all duration-300 text-center">
-            <BarChart3 size={48} className="mx-auto text-gray-500 mb-4" />
-            <h3 className="text-white text-lg font-semibold mb-2">Métricas del Torneo</h3>
-            <p className="text-gray-400">{selectedTournament ? "Próximamente" : "Selecciona un torneo primero"}</p>
-          </div>
+          selectedTournament ? (
+            <div className="space-y-4">
+              <h2 className="text-white font-bold text-lg">Métricas — {selectedTournament.name}</h2>
+              <AnalyticsDashboard tournamentId={selectedTournament.id} />
+            </div>
+          ) : (
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10 text-center">
+              <BarChart3 size={48} className="mx-auto text-gray-500 mb-4" />
+              <h3 className="text-white text-lg font-semibold mb-2">Métricas del Torneo</h3>
+              <p className="text-gray-400">Selecciona un torneo para ver sus métricas</p>
+            </div>
+          )
         )}
 
         {activeTab === "reports" && (
