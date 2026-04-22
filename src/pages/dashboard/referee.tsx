@@ -61,29 +61,31 @@ export default function RefereeDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-yellow-950 to-gray-950">
-      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-white text-xl font-bold">Hola, {user?.name}</h1>
-            <p className="text-gray-400 text-sm">Panel de Árbitro</p>
+    <div className="min-h-screen bg-pitch-grid animate-fade-in-up">
+      <div className="px-6 pt-6 pb-0">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-gradient-to-br from-yellow-500/10 to-amber-600/5 border border-yellow-500/20 rounded-3xl p-6 mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-white text-xl font-bold">Hola, {user?.name}</h1>
+              <p className="text-gray-400 text-sm">Panel de Árbitro</p>
+            </div>
+            <span className="text-yellow-400 text-2xl">🟨</span>
           </div>
-          <span className="text-yellow-400 text-2xl">🟨</span>
         </div>
       </div>
 
-      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 px-6 py-2">
-        <div className="max-w-6xl mx-auto flex gap-1 overflow-x-auto">
+      <div className="px-4 py-3 border-b border-white/5">
+        <div className="max-w-6xl mx-auto flex gap-1 p-1 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-x-auto">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.id ? "bg-yellow-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/5"}`}>
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${activeTab === tab.id ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" : "text-gray-500 hover:text-gray-300"}`}>
               {tab.icon}{tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto px-6 pb-6">
         {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm mb-4">{error}</div>}
 
         {activeTab === "today" && (
@@ -101,12 +103,16 @@ export default function RefereeDashboard() {
               </div>
             ) : (
               matches.map((match) => (
-                <div key={match.id} className="bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-white/10 hover:border-yellow-500/30 transition-all">
+                <div key={match.id} className={`backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-4 hover:border-white/20 transition-all duration-300 border-l-4 ${match.status === "in_progress" ? "border-l-green-500" : match.status === "completed" ? "border-l-gray-500" : "border-l-yellow-500"}`}>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-yellow-400 text-sm font-mono">{formatTime(match.time)}</span>
-                    <span className={`text-xs px-2 py-1 rounded ${match.status === "in_progress" ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400"}`}>
-                      {match.status === "in_progress" ? "⏱ En juego" : "📋 Programado"}
-                    </span>
+                    {match.status === "in_progress" ? (
+                      <span className="bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full text-xs animate-pulse">⏱ EN CURSO</span>
+                    ) : match.status === "completed" ? (
+                      <span className="bg-gray-500/20 text-gray-400 border border-gray-500/30 px-2 py-0.5 rounded-full text-xs">COMPLETADO</span>
+                    ) : (
+                      <span className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded-full text-xs">PENDIENTE</span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
@@ -131,12 +137,12 @@ export default function RefereeDashboard() {
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={() => toast.success("Asistencia confirmada")}
-                      className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-white py-2 rounded-lg font-semibold transition-all text-sm">
+                      className="flex-1 bg-yellow-600 hover:bg-yellow-500 text-white py-2 rounded-xl font-semibold transition-all text-sm active:scale-95 transition-transform">
                       Confirmar asistencia
                     </button>
                     <button
                       onClick={() => toast.info("Detalle de partido — próximamente")}
-                      className="bg-white/5 hover:bg-white/10 text-white py-2 px-4 rounded-lg transition-all text-sm border border-white/10">
+                      className="bg-white/5 hover:bg-white/10 text-white py-2 px-4 rounded-lg transition-all text-sm border border-white/10 active:scale-95 transition-transform">
                       Detalles
                     </button>
                   </div>
@@ -147,7 +153,7 @@ export default function RefereeDashboard() {
         )}
 
         {activeTab === "history" && (
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10 text-center">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-blue-500/20 transition-all duration-300 text-center">
             <ClipboardList size={48} className="mx-auto text-gray-500 mb-4" />
             <h3 className="text-white text-lg font-semibold mb-2">Historial de arbitrajes</h3>
             <p className="text-gray-400">
@@ -163,17 +169,17 @@ export default function RefereeDashboard() {
             ) : earnings ? (
               <>
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-5 text-center">
+                  <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-blue-500/20 transition-all duration-300 text-center">
                     <DollarSign size={24} className="mx-auto text-green-400 mb-2" />
                     <div className="text-2xl font-bold text-white">${earnings.total.toLocaleString("es-MX")}</div>
                     <div className="text-gray-400 text-sm">Total ganado</div>
                   </div>
-                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-5 text-center">
+                  <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-yellow-500/20 transition-all duration-300 text-center">
                     <DollarSign size={24} className="mx-auto text-yellow-400 mb-2" />
                     <div className="text-2xl font-bold text-white">${earnings.pending.toLocaleString("es-MX")}</div>
                     <div className="text-gray-400 text-sm">Pendiente</div>
                   </div>
-                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-5 text-center">
+                  <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-blue-500/20 transition-all duration-300 text-center">
                     <DollarSign size={24} className="mx-auto text-blue-400 mb-2" />
                     <div className="text-2xl font-bold text-white">${earnings.paid.toLocaleString("es-MX")}</div>
                     <div className="text-gray-400 text-sm">Pagado</div>
@@ -184,7 +190,7 @@ export default function RefereeDashboard() {
                 ) : (
                   <button
                     onClick={() => toast.info("Retiro SPEI — próximamente")}
-                    className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-semibold transition-all">
+                    className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-2xl font-semibold transition-all active:scale-95 transition-transform">
                     Solicitar retiro SPEI — ${earnings.pending.toLocaleString("es-MX")}
                   </button>
                 )}
@@ -196,7 +202,7 @@ export default function RefereeDashboard() {
         )}
 
         {activeTab === "stats" && (
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-blue-500/20 transition-all duration-300">
             {loading ? (
               <div className="grid grid-cols-3 gap-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
             ) : earnings ? (

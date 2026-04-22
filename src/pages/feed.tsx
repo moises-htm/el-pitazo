@@ -129,7 +129,7 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-pitch-grid animate-fade-in-up text-white overflow-x-hidden">
       {/* Header */}
       <div className="sticky top-0 z-20 px-4 py-3 flex items-center justify-between"
         style={{ background: 'linear-gradient(to bottom, #0a0a0a, transparent)' }}>
@@ -139,12 +139,6 @@ export default function FeedPage() {
           <span className="text-gray-600 text-xs font-display uppercase tracking-widest">FEED</span>
         </div>
         <div className="flex items-center gap-2">
-          {token && (
-            <button onClick={() => setShowUploadModal(true)}
-              className="btn-neon px-4 py-2 rounded-lg text-sm flex items-center gap-1.5">
-              <Upload size={14} /> SUBIR
-            </button>
-          )}
           {!token && (
             <Link href="/auth/login" className="text-gray-400 hover:text-[#39FF14] text-sm font-display uppercase tracking-wide transition-colors">
               Entrar
@@ -170,7 +164,7 @@ export default function FeedPage() {
         ) : (
           <div>
             {posts.map(post => (
-              <div key={post.id} className="relative bg-black w-full" style={{ marginBottom: '2px' }}>
+              <div key={post.id} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl overflow-hidden mb-4 hover:border-white/15 transition-all duration-300 mx-4">
                 {/* Featured badge */}
                 {post.isFeatured && (
                   <div className="absolute top-4 left-4 z-10 flex items-center gap-1.5 bg-[#39FF14] text-black text-xs font-display font-black uppercase px-3 py-1 rounded-full tracking-wide shadow-neon-sm">
@@ -179,12 +173,12 @@ export default function FeedPage() {
                 )}
 
                 {/* Video — full width, 9:16 on mobile, constrained on desktop */}
-                <div className="relative w-full mx-auto" style={{ maxWidth: '480px' }}>
+                <div className="rounded-t-3xl overflow-hidden relative w-full mx-auto" style={{ maxWidth: '480px' }}>
                   <div style={{ aspectRatio: '9/16', position: 'relative', background: '#111' }}>
                     <video
                       src={post.videoUrl}
                       poster={post.thumbnailUrl}
-                      className="w-full h-full object-cover"
+                      className="w-full aspect-video object-cover"
                       controls
                       playsInline
                       preload="metadata"
@@ -227,17 +221,41 @@ export default function FeedPage() {
                   <div className="absolute bottom-0 left-0 right-0 p-4 z-10"
                     style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)' }}>
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-[#39FF14]/20 flex items-center justify-center text-sm font-black font-display"
-                        style={{ border: '2px solid rgba(57,255,20,0.5)' }}>
+                      <div className="w-9 h-9 rounded-full bg-green-500/20 border border-green-500/30 overflow-hidden flex items-center justify-center text-green-400 font-bold text-sm">
                         {post.uploader.avatar ? (
                           <img src={post.uploader.avatar} alt="" className="w-full h-full object-cover" />
                         ) : post.uploader.name[0]?.toUpperCase()}
                       </div>
-                      <span className="text-white font-semibold text-sm">{post.uploader.name}</span>
+                      <span className="font-semibold text-white text-sm">{post.uploader.name}</span>
                     </div>
                     {post.caption && (
-                      <p className="text-gray-200 text-sm leading-snug">{post.caption}</p>
+                      <p className="text-gray-400 text-sm mt-1 leading-snug">{post.caption}</p>
                     )}
+                  </div>
+                </div>
+
+                {/* Below-video action row */}
+                <div className="p-4 flex items-center gap-4 border-t border-white/5">
+                  <button
+                    onClick={() => toggleLike(post)}
+                    className="flex items-center gap-1.5 text-gray-400 hover:text-red-400 transition-colors duration-200 text-sm"
+                  >
+                    <Heart size={16} fill={post.likedByMe ? "currentColor" : "none"} className={post.likedByMe ? "text-red-400" : ""} />
+                    {post.likesCount}
+                  </button>
+                  <button
+                    onClick={() => openComments(post)}
+                    className="flex items-center gap-1.5 text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
+                  >
+                    <MessageCircle size={16} />
+                    {post.commentsCount}
+                  </button>
+                  <div className="ml-auto">
+                    <WhatsAppShareButton
+                      text={`Mira este golazo en El Pitazo ⚽🔥\n${typeof window !== "undefined" ? window.location.origin : ""}/feed?post=${post.id}`}
+                      compact={true}
+                      className="!text-gray-400 hover:!text-green-400 !bg-transparent !border-0 !p-0"
+                    />
                   </div>
                 </div>
               </div>
@@ -296,11 +314,22 @@ export default function FeedPage() {
         </div>
       )}
 
+      {/* FAB — floating upload button */}
+      {token && (
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full btn-neon flex items-center justify-center shadow-2xl shadow-green-500/20 animate-pulse-glow active:scale-95 transition-transform"
+          aria-label="Subir video"
+        >
+          <Upload size={22} />
+        </button>
+      )}
+
       {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 z-40 flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowUploadModal(false)} />
-          <div className="relative bg-[#111] border border-white/10 rounded-t-2xl md:rounded-2xl w-full max-w-md p-6">
+          <div className="relative glass rounded-3xl p-6 max-w-sm mx-auto w-full">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white font-semibold">Subir video</h3>
               <button onClick={() => setShowUploadModal(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
