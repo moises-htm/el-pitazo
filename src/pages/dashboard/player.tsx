@@ -7,6 +7,8 @@ import { LocationMap } from "@/components/location-map";
 import { CredentialCard } from "@/components/credential-card";
 import { SelfieCapture } from "@/components/selfie-capture";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
+import { TeamPaymentStatus } from "@/components/team-payment-status";
+import { PaymentMethodSelector } from "@/components/payment-method-selector";
 import Link from "next/link";
 
 function Skeleton({ className }: { className?: string }) {

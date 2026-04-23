@@ -9,6 +9,7 @@ import { AnalyticsDashboard } from "@/components/analytics-dashboard";
 import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock, TrendingUp, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
+import { StandingsTable } from "@/components/standings-table";
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
