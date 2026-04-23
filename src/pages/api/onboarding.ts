@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 
@@ -37,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
-        ...(onboardingData !== undefined && { onboardingData }),
+        ...(onboardingData !== undefined && { onboardingData: onboardingData as Prisma.InputJsonValue }),
         ...(complete && { onboardingComplete: true }),
       },
       select: { onboardingComplete: true, onboardingData: true },
