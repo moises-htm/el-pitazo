@@ -6,7 +6,7 @@ import { TeamList } from "@/components/team-list";
 import { BracketView } from "@/components/bracket-view";
 import { FinancialDashboard } from "@/components/financial-dashboard";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
-import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock } from "lucide-react";
+import { Users, Trophy, DollarSign, ClipboardList, BarChart3, Plus, Clock, TrendingUp, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
 
