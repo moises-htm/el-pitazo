@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const orgs = await prisma.organization.findMany({
       where: { members: { some: { userId } } },
       include: {
-        creator: { select: { name: true, email: true } },
+        createdBy: { select: { name: true, email: true } },
         _count: { select: { members: true, tournaments: true } },
       },
       orderBy: { createdAt: "desc" },
