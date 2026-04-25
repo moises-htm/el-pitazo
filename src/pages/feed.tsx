@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Heart, MessageCircle, Play, Upload, Trophy, X } from "lucide-react";
@@ -223,7 +224,7 @@ export default function FeedPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-9 h-9 rounded-full bg-green-500/20 border border-green-500/30 overflow-hidden flex items-center justify-center text-green-400 font-bold text-sm">
                         {post.uploader.avatar ? (
-                          <img src={post.uploader.avatar} alt="" className="w-full h-full object-cover" />
+                          <Image src={post.uploader.avatar} alt="" fill className="object-cover" unoptimized={post.uploader.avatar?.startsWith("data:")} />
                         ) : post.uploader.name[0]?.toUpperCase()}
                       </div>
                       <span className="font-semibold text-white text-sm">{post.uploader.name}</span>

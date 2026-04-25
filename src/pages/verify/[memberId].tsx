@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { CheckCircle, XCircle, Shield } from "lucide-react";
+import Image from "next/image";
 
 export default function VerifyPage() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function VerifyPage() {
             <div className="flex justify-center pt-6 pb-4">
               <div className="w-28 h-28 rounded-full overflow-hidden border-4" style={{ borderColor: color }}>
                 {member.user.avatar ? (
-                  <img src={member.user.avatar} alt={member.user.name} className="w-full h-full object-cover" />
+                  <Image src={member.user.avatar} alt={member.user.name} fill className="object-cover" unoptimized={member.user.avatar.startsWith("data:")} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white" style={{ backgroundColor: `${color}33` }}>
                     {member.user.name.charAt(0).toUpperCase()}

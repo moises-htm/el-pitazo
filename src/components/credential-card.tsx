@@ -1,4 +1,5 @@
 import { QRCodeSVG } from "qrcode.react";
+import Image from "next/image";
 
 interface CredentialProps {
   member: {
@@ -58,7 +59,7 @@ export function CredentialCard({ member, baseUrl = "" }: CredentialProps) {
           }}
         >
           {member.user.avatar ? (
-            <img src={member.user.avatar} alt={member.user.name} className="w-full h-full object-cover" />
+            <Image src={member.user.avatar} alt={member.user.name} fill className="object-cover" unoptimized={member.user.avatar.startsWith("data:")} />
           ) : (
             <div
               className="w-full h-full flex items-center justify-center font-black text-3xl font-display"
