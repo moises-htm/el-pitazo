@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 // /api/auth/register — Next.js API Route
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
@@ -63,7 +64,7 @@ export default async function handler(
       token,
     });
   } catch (err: any) {
-    console.error("Register error:", err);
+    logger.error("Register error:", err);
     if (err.code === "P2002") {
       const field = err.meta?.target?.includes("email") ? "email" : "teléfono";
       return res.status(409).json({ error: `Ya existe una cuenta con ese ${field}` });

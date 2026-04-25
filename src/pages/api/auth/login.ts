@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 // /api/auth/login — Next.js API Route
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
@@ -63,7 +64,7 @@ export default async function handler(
       token,
     });
   } catch (err: any) {
-    console.error("Login error:", err);
+    logger.error("Login error:", err);
     return res.status(500).json({ error: "Error al iniciar sesión" });
   }
 }

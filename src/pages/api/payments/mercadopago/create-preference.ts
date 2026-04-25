@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import type { NextApiRequest, NextApiResponse } from "next";
 import MercadoPagoConfig, { Preference } from "mercadopago";
 import { prisma } from "@/lib/prisma";
@@ -76,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (err: any) {
     const isTimeout = err?.message?.includes("timed out");
     const detail = process.env.NODE_ENV !== "production" ? err?.message : undefined;
-    console.error("MP create-preference error:", { message: err?.message, tournamentId, teamId });
+    logger.error("MP create-preference error:", { message: err?.message, tournamentId, teamId });
     return res.status(isTimeout ? 504 : 502).json({
       error: isTimeout
         ? "MercadoPago tardó demasiado. Intenta de nuevo en unos segundos."

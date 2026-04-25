@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import { sendPushToUser } from "@/lib/push";
@@ -61,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.json({ ok: true, matchesChecked: matches.length, notificationsSent: sent });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     return res.status(500).json({ error: "Error al enviar recordatorios" });
   }
 }

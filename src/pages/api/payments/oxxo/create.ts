@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import type { NextApiRequest, NextApiResponse } from "next";
 import MercadoPagoConfig, { Payment as MPPayment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
@@ -53,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       }), 10_000, "mp-oxxo");
     } catch (mpErr) {
-      console.error("OXXO MP API error:", mpErr);
+      logger.error("OXXO MP API error:", mpErr);
       return res.status(502).json({ error: "Error al conectar con MercadoPago. Intenta de nuevo." });
     }
 
@@ -76,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
     } catch (dbErr) {
-      console.error(`ORPHANED OXXO PAYMENT: mpId=${result.id} team=${teamId}`, dbErr);
+      logger.error(`ORPHANED OXXO PAYMENT: mpId=${result.id} team=${teamId}`, dbErr);
       return res.status(500).json({ error: "Pago generado en MercadoPago pero no registrado. Contacta soporte con tu ID de pago: " + result.id });
     }
 
@@ -88,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       amount: Number(tournament.regFee),
     });
   } catch (err) {
-    console.error("OXXO create error:", err);
+    logger.error("OXXO create error:", err);
     return res.status(500).json({ error: "Error al generar voucher OXXO" });
   }
 }

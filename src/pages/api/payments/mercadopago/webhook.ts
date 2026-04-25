@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import type { NextApiRequest, NextApiResponse } from "next";
 import MercadoPagoConfig, { Payment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
@@ -121,7 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("MP webhook error:", err);
+    logger.error("MP webhook error:", err);
     return res.status(200).json({ ok: true });
   }
 }

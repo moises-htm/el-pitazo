@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import type { NextApiRequest, NextApiResponse } from "next";
 import MercadoPagoConfig, { Payment as MPPayment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
@@ -42,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       }), 10_000, "mp-spei");
     } catch (mpErr) {
-      console.error("SPEI MP API error:", mpErr);
+      logger.error("SPEI MP API error:", mpErr);
       return res.status(502).json({ error: "Error al conectar con MercadoPago. Intenta de nuevo." });
     }
 
@@ -66,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
     } catch (dbErr) {
-      console.error(`ORPHANED SPEI PAYMENT: mpId=${result.id} team=${teamId}`, dbErr);
+      logger.error(`ORPHANED SPEI PAYMENT: mpId=${result.id} team=${teamId}`, dbErr);
       return res.status(500).json({ error: "Referencia generada en MercadoPago pero no registrada. Contacta soporte con tu ID: " + result.id });
     }
 
@@ -79,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       expiresAt: (result as any).date_of_expiration ?? null,
     });
   } catch (err) {
-    console.error("SPEI create error:", err);
+    logger.error("SPEI create error:", err);
     return res.status(500).json({ error: "Error al generar referencia SPEI" });
   }
 }
