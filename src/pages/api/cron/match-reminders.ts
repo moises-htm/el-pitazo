@@ -53,10 +53,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       match.awayTeam!.members.forEach((m) => userIds.add(m.userId));
       if (match.refereeAssign) userIds.add(match.refereeAssign.refereeId);
 
-      for (const uid of userIds) {
-        await sendPushToUser(uid, payload);
-        sent++;
-      }
+      const results = await Promise.allSettled(
+        [...userIds].map((uid) => sendPushToUser(uid, payload))
+      );
+      sent += results.filter((r) => r.status === "fulfilled").length;
     }
 
     return res.json({ ok: true, matchesChecked: matches.length, notificationsSent: sent });
