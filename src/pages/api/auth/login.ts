@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { rateLimit, getIp } from "@/lib/rate-limit";
+import { setAuthCookie } from "@/lib/auth-cookie";
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
   throw new Error("CRITICAL: JWT_SECRET env var must be set in production");
@@ -49,7 +50,11 @@ export default async function handler(
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "30d" });
+
+    // Web: set httpOnly cookie (not readable by JS)
+    // Mobile (Capacitor): also return token in body for Authorization header usage
+    setAuthCookie(res, token);
 
     return res.json({
       user: {
