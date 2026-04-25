@@ -73,8 +73,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       sandboxInitPoint: result.sandbox_init_point,
       paymentId: payment.id,
     });
-  } catch (err) {
-    console.error("MP create-preference error:", err);
-    return res.status(500).json({ error: "Error al crear preferencia de pago" });
+  } catch (err: any) {
+    const isTimeout = err?.message?.includes("timed out");
+    const detail = process.env.NODE_ENV !== "production" ? err?.message : undefined;
+    console.error("MP create-preference error:", { message: err?.message, tournamentId, teamId });
+    return res.status(isTimeout ? 504 : 502).json({
+      error: isTimeout
+        ? "MercadoPago tardó demasiado. Intenta de nuevo en unos segundos."
+        : "Error al conectar con MercadoPago. Intenta de nuevo o usa otro método de pago.",
+      detail,
+    });
   }
 }
