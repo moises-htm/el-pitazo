@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
+import { withTimeout } from "@/lib/with-timeout";
 
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT || "mailto:admin@elpitazo.app",
@@ -16,9 +17,13 @@ export async function sendPushToUser(userId: string, payload: { title: string; b
   await Promise.allSettled(
     subs.map(async (sub) => {
       try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify(payload)
+        await withTimeout(
+          webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            JSON.stringify(payload)
+          ),
+          8_000,
+          "webpush"
         );
       } catch (err: any) {
         if (err.statusCode === 410 || err.statusCode === 404) {

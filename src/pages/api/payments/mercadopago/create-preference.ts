@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import MercadoPagoConfig, { Preference } from "mercadopago";
 import { prisma } from "@/lib/prisma";
 import { getUserId } from "@/lib/server-auth";
+import { withTimeout } from "@/lib/with-timeout";
 
 const mpClient = new MercadoPagoConfig({ accessToken: process.env.MP_SECRET_KEY! });
 const mpPreference = new Preference(mpClient);
@@ -28,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://elpitazo.app";
     const externalRef = `${tournamentId}:${teamId}:${userId}`;
 
-    const result = await mpPreference.create({
+    const result = await withTimeout(mpPreference.create({
       body: {
         items: [
           {
@@ -51,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         external_reference: externalRef,
         metadata: { tournamentId, teamId, userId },
       },
-    });
+    }), 10_000, "mp-preference");
 
     const payment = await prisma.payment.create({
       data: {

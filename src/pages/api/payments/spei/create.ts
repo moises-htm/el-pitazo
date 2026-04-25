@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import MercadoPagoConfig, { Payment as MPPayment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
 import { getUserId } from "@/lib/server-auth";
+import { withTimeout } from "@/lib/with-timeout";
 
 const mpClient = new MercadoPagoConfig({ accessToken: process.env.MP_SECRET_KEY! });
 const mpPayment = new MPPayment(mpClient);
@@ -30,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Phase 1: Create payment in MercadoPago
     let result: Awaited<ReturnType<typeof mpPayment.create>>;
     try {
-      result = await mpPayment.create({
+      result = await withTimeout(mpPayment.create({
         body: {
           transaction_amount: Number(tournament.regFee),
           description: `Inscripción ${tournament.name} — Equipo: ${team.name}`,
@@ -39,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           external_reference: `${tournamentId}:${teamId}:${userId}`,
           notification_url: `${baseUrl}/api/payments/mercadopago/webhook`,
         },
-      });
+      }), 10_000, "mp-spei");
     } catch (mpErr) {
       console.error("SPEI MP API error:", mpErr);
       return res.status(502).json({ error: "Error al conectar con MercadoPago. Intenta de nuevo." });
