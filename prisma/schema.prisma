@@ -140,6 +140,8 @@ model Tournament {
   sponsors       Sponsor[]
   analytics      TournamentAnalytics[]
 
+  @@index([creatorId])
+  @@index([organizationId])
   @@map("tournaments")
 }
 
@@ -162,6 +164,7 @@ model Field {
 
   matches       BracketMatch[]
 
+  @@index([tournamentId])
   @@map("fields")
 }
 
@@ -186,6 +189,7 @@ model Team {
   payments       Payment[]
 
   @@unique([tournamentId, name])
+  @@index([tournamentId])
   @@map("teams")
 }
 
@@ -250,6 +254,10 @@ model BracketMatch {
   media           TournamentMedia[]    @relation("MatchMedia")
   scheduleChanges ScheduleChangeRequest[]
 
+  @@index([roundId])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@index([refereeId])
   @@map("bracket_matches")
 }
 
@@ -290,6 +298,8 @@ model Payment {
 
   @@index([teamId])
   @@index([status])
+  @@index([userId])
+  @@index([tournamentId])
   @@map("payments")
 }
 
@@ -326,6 +336,8 @@ model RefereeReport {
   submittedAt    DateTime?
   createdAt      DateTime   @default(now())
 
+  @@index([matchId])
+  @@index([refereeId])
   @@map("referee_reports")
 }
 
@@ -362,6 +374,8 @@ model TournamentMedia {
   createdAt   DateTime @default(now())
 
   @@index([tournamentId])
+  @@index([uploaderId])
+  @@index([matchId])
   @@map("tournament_media")
 }
 
@@ -377,6 +391,7 @@ model Sponsor {
   contact     String?
   createdAt   DateTime @default(now())
 
+  @@index([tournamentId])
   @@map("sponsors")
 }
 
@@ -423,6 +438,7 @@ model ScheduleChangeRequest {
   updatedAt        DateTime              @updatedAt
 
   @@index([matchId])
+  @@index([requestedById])
   @@map("schedule_change_requests")
 }
 
@@ -493,6 +509,7 @@ model FeedComment {
   createdAt DateTime @default(now())
 
   @@index([postId])
+  @@index([userId])
   @@map("feed_comments")
 }
 
@@ -508,6 +525,7 @@ model Organization {
   members     OrganizationMember[]
   tournaments Tournament[]
 
+  @@index([createdById])
   @@map("organizations")
 }
 
@@ -540,6 +558,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -550,6 +569,7 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("sessions")
 }
 
@@ -591,5 +611,6 @@ model ChatMessage {
   createdAt  DateTime  @default(now())
 
   @@index([roomId, createdAt])
+  @@index([userId])
   @@map("chat_messages")
 }
