@@ -1,9 +1,50 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import MercadoPagoConfig, { Payment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 const mpClient = new MercadoPagoConfig({ accessToken: process.env.MP_SECRET_KEY! });
 const mpPayment = new Payment(mpClient);
+
+/**
+ * Verifies the MercadoPago v2 webhook signature.
+ * See: https://www.mercadopago.com.mx/developers/es/docs/your-integrations/notifications/webhooks
+ * Header format: x-signature: "ts=<timestamp>,v1=<hmac-sha256>"
+ */
+function verifyMpSignature(req: NextApiRequest): boolean {
+  const secret = process.env.MP_WEBHOOK_SECRET;
+  if (!secret) return true; // skip verification in dev if not configured
+
+  const signature = req.headers["x-signature"] as string | undefined;
+  const requestId = req.headers["x-request-id"] as string | undefined;
+  if (!signature) return false;
+
+  const parts = Object.fromEntries(
+    signature.split(",").map((p) => p.split("=") as [string, string])
+  );
+  const ts = parts["ts"];
+  const v1 = parts["v1"];
+  if (!ts || !v1) return false;
+
+  const dataId = (
+    (req.query.data as any)?.id ??
+    req.body?.data?.id ??
+    ""
+  ) as string;
+
+  const manifest = `id:${dataId};request-id:${requestId ?? ""};ts:${ts};`;
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(manifest)
+    .digest("hex");
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(v1));
+  } catch {
+    return false;
+  }
+}
 
 const statusMap: Record<string, "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"> = {
   approved: "COMPLETED",
@@ -18,6 +59,10 @@ const statusMap: Record<string, "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED">
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido" });
+
+  if (!verifyMpSignature(req)) {
+    return res.status(401).json({ error: "Invalid webhook signature" });
+  }
 
   try {
     // Support both IPN (query params) and Webhooks (body) styles
