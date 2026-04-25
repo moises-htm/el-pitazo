@@ -67,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
     } catch (dbErr) {
-      logger.error(`ORPHANED SPEI PAYMENT: mpId=${result.id} team=${teamId}`, dbErr);
+      logger.error(`ORPHANED SPEI PAYMENT: mpId=${result.id} team=${teamId}`, { error: (dbErr as any)?.message });
       return res.status(500).json({ error: "Referencia generada en MercadoPago pero no registrada. Contacta soporte con tu ID: " + result.id });
     }
 

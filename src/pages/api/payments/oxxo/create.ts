@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
     } catch (dbErr) {
-      logger.error(`ORPHANED OXXO PAYMENT: mpId=${result.id} team=${teamId}`, dbErr);
+      logger.error(`ORPHANED OXXO PAYMENT: mpId=${result.id} team=${teamId}`, { error: (dbErr as any)?.message });
       return res.status(500).json({ error: "Pago generado en MercadoPago pero no registrado. Contacta soporte con tu ID de pago: " + result.id });
     }
 

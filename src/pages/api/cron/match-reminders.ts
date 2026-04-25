@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.json({ ok: true, matchesChecked: matches.length, notificationsSent: sent });
   } catch (err) {
-    logger.error(err);
+    logger.error("match-reminders cron failed", { error: (err as any)?.message ?? String(err) });
     return res.status(500).json({ error: "Error al enviar recordatorios" });
   }
 }
