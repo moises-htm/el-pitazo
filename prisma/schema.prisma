@@ -140,6 +140,8 @@ model Tournament {
   sponsors       Sponsor[]
   analytics      TournamentAnalytics[]
 
+  @@index([creatorId])
+  @@index([organizationId])
   @@map("tournaments")
 }
 
@@ -162,6 +164,7 @@ model Field {
 
   matches       BracketMatch[]
 
+  @@index([tournamentId])
   @@map("fields")
 }
 
@@ -186,6 +189,7 @@ model Team {
   payments       Payment[]
 
   @@unique([tournamentId, name])
+  @@index([tournamentId])
   @@map("teams")
 }
 
@@ -202,6 +206,8 @@ model TeamMember {
 
   @@unique([teamId, number])
   @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
   @@map("team_members")
 }
 
@@ -216,6 +222,7 @@ model BracketRound {
   matches    BracketMatch[]
 
   @@unique([tournamentId, roundNum])
+  @@index([tournamentId])
   @@map("bracket_rounds")
 }
 
@@ -250,6 +257,7 @@ model BracketMatch {
   media           TournamentMedia[]    @relation("MatchMedia")
   scheduleChanges ScheduleChangeRequest[]
 
+  @@index([roundId])
   @@map("bracket_matches")
 }
 
@@ -288,7 +296,9 @@ model Payment {
   paidAt                DateTime?
   createdAt             DateTime        @default(now())
 
+  @@index([tournamentId])
   @@index([teamId])
+  @@index([userId])
   @@index([status])
   @@map("payments")
 }
@@ -326,6 +336,8 @@ model RefereeReport {
   submittedAt    DateTime?
   createdAt      DateTime   @default(now())
 
+  @@index([matchId])
+  @@index([refereeId])
   @@map("referee_reports")
 }
 
@@ -377,6 +389,7 @@ model Sponsor {
   contact     String?
   createdAt   DateTime @default(now())
 
+  @@index([tournamentId])
   @@map("sponsors")
 }
 
@@ -423,6 +436,7 @@ model ScheduleChangeRequest {
   updatedAt        DateTime              @updatedAt
 
   @@index([matchId])
+  @@index([requestedById])
   @@map("schedule_change_requests")
 }
 
@@ -447,6 +461,7 @@ model NotificationPreference {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@index([userId])
   @@map("notification_preferences")
 }
 
@@ -480,6 +495,8 @@ model FeedLike {
   createdAt DateTime @default(now())
 
   @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
   @@map("feed_likes")
 }
 
@@ -508,6 +525,7 @@ model Organization {
   members     OrganizationMember[]
   tournaments Tournament[]
 
+  @@index([createdById])
   @@map("organizations")
 }
 
@@ -521,6 +539,8 @@ model OrganizationMember {
   createdAt      DateTime     @default(now())
 
   @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
   @@map("organization_members")
 }
 
@@ -540,6 +560,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -550,6 +571,7 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("sessions")
 }
 
