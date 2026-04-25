@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { rateLimit, getIp } from "@/lib/rate-limit";
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
   throw new Error("CRITICAL: JWT_SECRET env var must be set in production");
@@ -13,9 +14,17 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const rl = rateLimit(`login:${getIp(req)}`, 10, 60_000); // 10 attempts / minute per IP
+  if (!rl.allowed) {
+    res.setHeader("Retry-After", Math.ceil((rl.resetAt - Date.now()) / 1000));
+    return res.status(429).json({ error: "Demasiados intentos. Intenta en un minuto." });
+  }
+
   try {
     const data = JSON.parse(JSON.stringify(req.body)) as any;
-    
+
     if (!data.password || (!data.phone && !data.email)) {
       return res.status(400).json({ error: "Missing credentials" });
     }
