@@ -27,33 +27,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://elpitazo.app";
 
-    const result = await mpPayment.create({
-      body: {
-        transaction_amount: Number(tournament.regFee),
-        description: `Inscripción ${tournament.name} — Equipo: ${team.name}`,
-        payment_method_id: "bank_transfer",
-        payer: { email: user.email },
-        external_reference: `${tournamentId}:${teamId}:${userId}`,
-        notification_url: `${baseUrl}/api/payments/mercadopago/webhook`,
-      },
-    });
+    // Phase 1: Create payment in MercadoPago
+    let result: Awaited<ReturnType<typeof mpPayment.create>>;
+    try {
+      result = await mpPayment.create({
+        body: {
+          transaction_amount: Number(tournament.regFee),
+          description: `Inscripción ${tournament.name} — Equipo: ${team.name}`,
+          payment_method_id: "bank_transfer",
+          payer: { email: user.email },
+          external_reference: `${tournamentId}:${teamId}:${userId}`,
+          notification_url: `${baseUrl}/api/payments/mercadopago/webhook`,
+        },
+      });
+    } catch (mpErr) {
+      console.error("SPEI MP API error:", mpErr);
+      return res.status(502).json({ error: "Error al conectar con MercadoPago. Intenta de nuevo." });
+    }
 
     const txDetails = result.transaction_details as any;
     const clabe = txDetails?.financial_institution ?? txDetails?.external_resource_url ?? null;
     const reference = txDetails?.acquirer_reference_number ?? String(result.id);
 
-    const payment = await prisma.payment.create({
-      data: {
-        tournamentId,
-        teamId,
-        userId,
-        amount: tournament.regFee,
-        currency: "MXN",
-        method: "SPEI",
-        status: "PENDING",
-        externalId: String(result.id),
-      },
-    });
+    // Phase 2: Persist to DB — log orphan if this fails so we can reconcile
+    let payment;
+    try {
+      payment = await prisma.payment.create({
+        data: {
+          tournamentId,
+          teamId,
+          userId,
+          amount: tournament.regFee,
+          currency: "MXN",
+          method: "SPEI",
+          status: "PENDING",
+          externalId: String(result.id),
+        },
+      });
+    } catch (dbErr) {
+      console.error(`ORPHANED SPEI PAYMENT: mpId=${result.id} team=${teamId}`, dbErr);
+      return res.status(500).json({ error: "Referencia generada en MercadoPago pero no registrada. Contacta soporte con tu ID: " + result.id });
+    }
 
     return res.json({
       paymentId: payment.id,

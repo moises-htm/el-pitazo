@@ -27,43 +27,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://elpitazo.app";
 
-    const result = await mpPayment.create({
-      body: {
-        transaction_amount: Number(tournament.regFee),
-        description: `Inscripción ${tournament.name} — Equipo: ${team.name}`,
-        payment_method_id: "oxxo",
-        payer: { email: user.email },
-        external_reference: `${tournamentId}:${teamId}:${userId}`,
-        notification_url: `${baseUrl}/api/payments/mercadopago/webhook`,
-        additional_info: {
-          items: [
-            {
-              id: `${tournamentId}-${teamId}`,
-              title: `Inscripción: ${tournament.name}`,
-              description: `Equipo: ${team.name}`,
-              quantity: 1,
-              unit_price: Number(tournament.regFee),
-            },
-          ],
+    // Phase 1: Create payment in MercadoPago
+    let result: Awaited<ReturnType<typeof mpPayment.create>>;
+    try {
+      result = await mpPayment.create({
+        body: {
+          transaction_amount: Number(tournament.regFee),
+          description: `Inscripción ${tournament.name} — Equipo: ${team.name}`,
+          payment_method_id: "oxxo",
+          payer: { email: user.email },
+          external_reference: `${tournamentId}:${teamId}:${userId}`,
+          notification_url: `${baseUrl}/api/payments/mercadopago/webhook`,
+          additional_info: {
+            items: [
+              {
+                id: `${tournamentId}-${teamId}`,
+                title: `Inscripción: ${tournament.name}`,
+                description: `Equipo: ${team.name}`,
+                quantity: 1,
+                unit_price: Number(tournament.regFee),
+              },
+            ],
+          },
         },
-      },
-    });
+      });
+    } catch (mpErr) {
+      console.error("OXXO MP API error:", mpErr);
+      return res.status(502).json({ error: "Error al conectar con MercadoPago. Intenta de nuevo." });
+    }
 
     const voucherUrl = (result.transaction_details as any)?.external_resource_url ?? null;
 
-    const payment = await prisma.payment.create({
-      data: {
-        tournamentId,
-        teamId,
-        userId,
-        amount: tournament.regFee,
-        currency: "MXN",
-        method: "OXXO",
-        status: "PENDING",
-        externalId: String(result.id),
-        receiptUrl: voucherUrl,
-      },
-    });
+    // Phase 2: Persist to DB — log orphan if this fails so we can reconcile
+    let payment;
+    try {
+      payment = await prisma.payment.create({
+        data: {
+          tournamentId,
+          teamId,
+          userId,
+          amount: tournament.regFee,
+          currency: "MXN",
+          method: "OXXO",
+          status: "PENDING",
+          externalId: String(result.id),
+          receiptUrl: voucherUrl,
+        },
+      });
+    } catch (dbErr) {
+      console.error(`ORPHANED OXXO PAYMENT: mpId=${result.id} team=${teamId}`, dbErr);
+      return res.status(500).json({ error: "Pago generado en MercadoPago pero no registrado. Contacta soporte con tu ID de pago: " + result.id });
+    }
 
     return res.json({
       paymentId: payment.id,
