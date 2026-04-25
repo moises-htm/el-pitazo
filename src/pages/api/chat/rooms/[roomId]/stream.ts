@@ -2,6 +2,9 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  throw new Error("CRITICAL: JWT_SECRET env var must be set in production");
+}
 const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
 
 export const config = { api: { bodyParser: false } };

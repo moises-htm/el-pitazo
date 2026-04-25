@@ -6,6 +6,9 @@ import { TournamentStatus } from "@prisma/client";
 
 const VALID_STATUSES = new Set<string>(Object.values(TournamentStatus));
 
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  throw new Error("CRITICAL: JWT_SECRET env var must be set in production");
+}
 const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
 
 function verifyToken(req: NextApiRequest) {
