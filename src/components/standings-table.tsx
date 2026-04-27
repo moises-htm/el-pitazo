@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, TrendingUp } from "lucide-react";
+import { Trophy, TrendingUp, Share2, Download } from "lucide-react";
 
 interface StandingRow {
   position: number;
@@ -72,8 +72,40 @@ export function StandingsTable({ tournamentId }: StandingsTableProps) {
     );
   }
 
+  const shareStandings = async () => {
+    try {
+      const r = await fetch(`/api/tournaments/${tournamentId}/standings-text`);
+      const text = await r.text();
+      const encoded = encodeURIComponent(text);
+      window.open(`https://wa.me/?text=${encoded}`, "_blank");
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div className="bg-gray-900 rounded-2xl border border-white/10 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
+        <span className="text-xs font-display uppercase tracking-wide text-gray-400">Posiciones</span>
+        <div className="flex items-center gap-3">
+          <a
+            href={`/api/tournaments/${tournamentId}/standings.csv`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-blue-300 hover:text-blue-200"
+            title="Descargar CSV (abre en Excel)"
+          >
+            <Download size={12} /> CSV
+          </a>
+          <button
+            onClick={shareStandings}
+            className="flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-200"
+            title="Compartir tabla por WhatsApp"
+          >
+            <Share2 size={12} /> Compartir
+          </button>
+        </div>
+      </div>
       {/* Column headers */}
       <div className="grid grid-cols-[auto_1fr_repeat(7,_auto)] gap-x-3 px-4 py-2 border-b border-white/10 text-gray-500 text-xs font-semibold uppercase tracking-wide">
         <span className="w-5 text-center">#</span>

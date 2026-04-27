@@ -25,10 +25,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.json({
       matches: matchIds.length,
-      goals: countMap["GOAL"] || 0,
-      assists: countMap["ASSIST"] || 0,
-      yellowCards: countMap["YELLOW_CARD"] || 0,
-      redCards: countMap["RED_CARD"] || 0,
+      goals: (countMap["GOL"] ?? 0) + (countMap["GOAL"] ?? 0),
+      assists: (countMap["ASISTENCIA"] ?? 0) + (countMap["ASSIST"] ?? 0),
+      yellowCards: (countMap["TARJETA_AMARILLA"] ?? 0) + (countMap["YELLOW_CARD"] ?? 0),
+      redCards: (countMap["TARJETA_ROJA"] ?? 0) + (countMap["RED_CARD"] ?? 0),
     });
   } catch (err) {
     console.error(err);

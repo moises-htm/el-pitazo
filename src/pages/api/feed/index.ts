@@ -10,8 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const page = parseInt((req.query.page as string) || "1");
     const limit = 10;
     const featured = req.query.featured === "true";
+    const tournamentId = (req.query.tournamentId as string) || undefined;
 
-    const where = featured ? { isFeatured: true } : {};
+    const where: any = {};
+    if (featured) where.isFeatured = true;
+    if (tournamentId) where.tournamentId = tournamentId;
     const posts = await prisma.feedPost.findMany({
       where,
       orderBy: featured ? { createdAt: "desc" } : [{ isFeatured: "desc" }, { createdAt: "desc" }],

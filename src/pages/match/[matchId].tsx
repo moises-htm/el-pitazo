@@ -1,12 +1,37 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import {
-  ShieldAlert, Flag, ArrowLeftRight, AlertTriangle,
-  Play, PauseCircle, CheckCircle2, ChevronLeft, Plus, X, Loader2,
+  CheckCircle2, ChevronLeft, Plus, X, Loader2, Clock,
 } from "lucide-react";
+
+function MatchClock({ startedAt, phase }: { startedAt: string | null; phase: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (phase === "FINALIZADO" || phase === "Finalizado") return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [phase]);
+
+  const display = useMemo(() => {
+    if (!startedAt) return "--:--";
+    const elapsedMs = now - new Date(startedAt).getTime();
+    if (elapsedMs < 0) return "00:00";
+    const totalSec = Math.floor(elapsedMs / 1000);
+    const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
+    const ss = String(totalSec % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+  }, [now, startedAt]);
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 mt-2 text-xs font-mono text-emerald-400">
+      <Clock size={12} />
+      <span className="tabular-nums">{display}</span>
+    </div>
+  );
+}
 
 const EVENT_TYPES = [
   { type: "GOL", label: "Gol", icon: "⚽", color: "bg-green-600 hover:bg-green-500" },
@@ -232,6 +257,9 @@ export default function MatchPage() {
               <p className="text-gray-500 text-xs mt-1">
                 {new Date(match.scheduledAt).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" })}
               </p>
+            )}
+            {(inProgress || finished) && (
+              <MatchClock startedAt={match.startedAt} phase={phaseFromMatch(match)} />
             )}
           </div>
           <div className="text-center flex-1">

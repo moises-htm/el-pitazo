@@ -56,6 +56,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: { id: matchId },
       data: updateData,
     });
+
+    if (action === "FINISH") {
+      try {
+        const enriched = await prisma.bracketMatch.findUnique({
+          where: { id: matchId },
+          include: {
+            homeTeam: { select: { name: true } },
+            awayTeam: { select: { name: true } },
+            round: { select: { tournamentId: true, tournament: { select: { name: true } } } },
+          },
+        });
+        if (enriched?.homeTeam && enriched?.awayTeam) {
+          const home = enriched.homeTeam.name;
+          const away = enriched.awayTeam.name;
+          const hs = enriched.homeScore ?? 0;
+          const as = enriched.awayScore ?? 0;
+          const winner = hs > as ? home : as > hs ? away : null;
+          const caption = winner
+            ? `🏁 Final · ${home} ${hs} – ${as} ${away} · ¡Ganó ${winner}!`
+            : `🏁 Final · ${home} ${hs} – ${as} ${away}`;
+          await prisma.feedPost.create({
+            data: {
+              uploaderId: userId,
+              videoUrl: `result:${matchId}`,
+              caption,
+              tournamentId: enriched.round.tournamentId,
+            },
+          });
+        }
+      } catch (e) {
+        console.warn("Auto-post failed (non-fatal):", e);
+      }
+    }
+
     return res.json({ match: updated });
   } catch (err) {
     console.error(err);

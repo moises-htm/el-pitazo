@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Heart, MessageCircle, Play, Upload, Trophy, X } from "lucide-react";
@@ -26,7 +27,23 @@ interface Comment {
   createdAt: string;
 }
 
+function ResultCard({ caption, matchId }: { caption: string; matchId: string }) {
+  return (
+    <Link
+      href={`/match/${matchId}`}
+      className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-emerald-600/40 via-gray-900 to-black"
+    >
+      <div className="text-5xl mb-3">🏁</div>
+      <p className="font-display font-black text-2xl uppercase tracking-tight text-white">Resultado final</p>
+      <p className="text-gray-300 text-base mt-2 max-w-xs">{caption}</p>
+      <span className="mt-4 text-xs font-display uppercase tracking-widest text-emerald-300">Ver partido →</span>
+    </Link>
+  );
+}
+
 export default function FeedPage() {
+  const router = useRouter();
+  const tournamentFilter = (router.query.tournament as string) || "";
   const { user, token } = useAuthStore();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,12 +59,14 @@ export default function FeedPage() {
   const [uploadCaption, setUploadCaption] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
 
-  useEffect(() => { fetchPosts(1); }, []);
+  useEffect(() => { fetchPosts(1); }, [tournamentFilter]);
 
   async function fetchPosts(p: number) {
     setLoading(true);
     try {
-      const data = await api<{ posts: Post[] }>(`/api/feed?page=${p}`, token ? { auth: true } : {});
+      const qs = new URLSearchParams({ page: String(p) });
+      if (tournamentFilter) qs.set("tournamentId", tournamentFilter);
+      const data = await api<{ posts: Post[] }>(`/api/feed?${qs}`, token ? { auth: true } : {});
       if (p === 1) setPosts(data.posts);
       else setPosts(prev => [...prev, ...data.posts]);
       setHasMore(data.posts.length === 10);
@@ -139,6 +158,14 @@ export default function FeedPage() {
           <span className="text-gray-600 text-xs font-display uppercase tracking-widest">FEED</span>
         </div>
         <div className="flex items-center gap-2">
+          {tournamentFilter && (
+            <button
+              onClick={() => router.push("/feed", undefined, { shallow: true })}
+              className="flex items-center gap-1 text-emerald-300 bg-emerald-400/10 px-2.5 py-1 rounded text-xs font-display uppercase tracking-wide"
+            >
+              Filtro torneo <X size={12} />
+            </button>
+          )}
           {!token && (
             <Link href="/auth/login" className="text-gray-400 hover:text-[#39FF14] text-sm font-display uppercase tracking-wide transition-colors">
               Entrar
@@ -172,17 +199,21 @@ export default function FeedPage() {
                   </div>
                 )}
 
-                {/* Video — full width, 9:16 on mobile, constrained on desktop */}
+                {/* Video or result card */}
                 <div className="rounded-t-3xl overflow-hidden relative w-full mx-auto" style={{ maxWidth: '480px' }}>
                   <div style={{ aspectRatio: '9/16', position: 'relative', background: '#111' }}>
-                    <video
-                      src={post.videoUrl}
-                      poster={post.thumbnailUrl}
-                      className="w-full aspect-video object-cover"
-                      controls
-                      playsInline
-                      preload="metadata"
-                    />
+                    {post.videoUrl.startsWith("result:") ? (
+                      <ResultCard caption={post.caption || ""} matchId={post.videoUrl.slice("result:".length)} />
+                    ) : (
+                      <video
+                        src={post.videoUrl}
+                        poster={post.thumbnailUrl}
+                        className="w-full aspect-video object-cover"
+                        controls
+                        playsInline
+                        preload="metadata"
+                      />
+                    )}
 
                     {/* RIGHT SIDE — floating action buttons (TikTok style) */}
                     <div className="absolute right-3 bottom-20 flex flex-col items-center gap-5 z-20">

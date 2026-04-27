@@ -127,7 +127,12 @@ export default function TournamentDetailPage() {
             {active === "info" && <InfoTab t={t} matchCount={matches.length} teamCount={teams.length} />}
             {active === "teams" && <TeamsTab teams={teams} />}
             {active === "matches" && <MatchesTab matches={matches} />}
-            {active === "standings" && <StandingsTable tournamentId={id} />}
+            {active === "standings" && (
+              <div className="space-y-4">
+                <StandingsTable tournamentId={id} />
+                <Leaderboard tournamentId={id} />
+              </div>
+            )}
             {active === "bracket" && <BracketView tournamentId={id} />}
           </>
         )}
@@ -174,6 +179,19 @@ function InfoTab({ t, matchCount, teamCount }: { t: any; matchCount: number; tea
         </div>
         <WhatsAppShareButton text={shareText} label="WhatsApp" />
       </div>
+
+      <Link
+        href={`/feed?tournament=${t.id}`}
+        className="card-glass p-4 block hover:border-emerald-400/30 transition"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-white text-sm font-semibold">Feed del torneo</p>
+            <p className="text-gray-500 text-xs">Resultados, videos y momentos</p>
+          </div>
+          <span className="text-emerald-300 text-xs font-display uppercase tracking-wide">Ver →</span>
+        </div>
+      </Link>
     </div>
   );
 }
@@ -217,6 +235,61 @@ function TeamsTab({ teams }: { teams: any[] }) {
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+function Leaderboard({ tournamentId }: { tournamentId: string }) {
+  const [data, setData] = useState<{ scorers: any[]; assistants: any[] } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/tournaments/${tournamentId}/leaderboard`)
+      .then((r) => r.json())
+      .then((d) => setData({ scorers: d.scorers || [], assistants: d.assistants || [] }))
+      .catch(() => setData({ scorers: [], assistants: [] }))
+      .finally(() => setLoading(false));
+  }, [tournamentId]);
+
+  if (loading) return <div className="card-glass p-4"><Skeleton className="h-32" /></div>;
+  if (!data || (data.scorers.length === 0 && data.assistants.length === 0)) {
+    return (
+      <div className="card-glass p-4 text-center">
+        <p className="text-gray-400 text-sm">Aún no hay goleadores</p>
+      </div>
+    );
+  }
+  return (
+    <div className="card-glass p-4">
+      <h3 className="text-gray-400 text-xs font-display uppercase tracking-wide mb-3">Goleadores</h3>
+      <div className="space-y-2 mb-4">
+        {data.scorers.slice(0, 5).map((s, i) => (
+          <div key={s.player.id} className="flex items-center gap-3">
+            <span className="w-6 text-center text-sm font-bold text-gray-500">{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-semibold truncate">{s.player.name}</p>
+              <p className="text-xs text-gray-500 truncate">{s.team?.name ?? "Sin equipo"}</p>
+            </div>
+            <span className="text-emerald-400 font-display font-black tabular-nums">{s.goals}</span>
+          </div>
+        ))}
+      </div>
+      {data.assistants.length > 0 && (
+        <>
+          <h3 className="text-gray-400 text-xs font-display uppercase tracking-wide mb-3 mt-2">Asistencias</h3>
+          <div className="space-y-2">
+            {data.assistants.slice(0, 5).map((s, i) => (
+              <div key={s.player.id} className="flex items-center gap-3">
+                <span className="w-6 text-center text-sm font-bold text-gray-500">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-semibold truncate">{s.player.name}</p>
+                </div>
+                <span className="text-blue-400 font-display font-black tabular-nums">{s.assists}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
