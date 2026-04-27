@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import { useAuthStore } from "@/lib/auth";
+import { useTheme } from "@/lib/theme";
 import { SplashScreen } from "@/components/splash-screen";
 import { BottomNav } from "@/components/bottom-nav";
 import { AppHeader } from "@/components/app-header";
@@ -13,6 +14,7 @@ const PUBLIC_ROUTES = ["/", ...AUTH_ROUTES];
 
 export default function App({ Component, pageProps: { session, ...pageProps } }: { Component: any; pageProps: any }) {
   const hydrate = useAuthStore((s) => s.hydrate);
+  const hydrateTheme = useTheme((s) => s.hydrate);
   const { user } = useAuthStore();
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
@@ -32,7 +34,8 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
       }
     }
     hydrate();
-  }, [hydrate]);
+    hydrateTheme();
+  }, [hydrate, hydrateTheme]);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {

@@ -210,3 +210,15 @@ input, select, textarea { font-size: 16px; }
 }
 .interactive:hover { transform: scale(1.02); }
 .interactive:active { transform: scale(0.97); }
+
+/* Light theme overrides — minimal, body-level only to keep neon brand intact */
+html.light body {
+  color: #0a0a0a;
+  background: #f8fafc;
+}
+html.light .text-white { color: #0f172a !important; }
+html.light .text-gray-400 { color: #475569 !important; }
+html.light .text-gray-500 { color: #64748b !important; }
+html.light .bg-gradient-to-br.from-gray-950 { background: linear-gradient(135deg, #f8fafc, #e0f2fe, #f8fafc) !important; }
+html.light .bg-\[\#0a0a0a\]\/80 { background: rgba(248, 250, 252, 0.85) !important; }
+html.light .bg-gray-950 { background: #f8fafc !important; }

@@ -315,7 +315,9 @@ export default function PlayerDashboard() {
                           <Trophy size={16} className="text-yellow-400 shrink-0" />
                           <span className="text-xs text-[#39FF14] bg-[#39FF14]/10 px-2 py-0.5 rounded font-display uppercase tracking-wide">{typeLabel(t.type)}</span>
                         </div>
-                        <h3 className="font-display font-black text-xl uppercase text-white mb-1 truncate">{t.name}</h3>
+                        <Link href={`/tournament/${t.id}`} className="block hover:opacity-80 transition-opacity">
+                          <h3 className="font-display font-black text-xl uppercase text-white mb-1 truncate">{t.name}</h3>
+                        </Link>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-400 text-sm">
                           {t.fieldLocation && <span className="flex items-center gap-1"><MapPin size={14} />{t.fieldLocation}</span>}
                           {t.startDate && <span className="flex items-center gap-1"><Clock size={14} />{new Date(t.startDate).toLocaleDateString("es-MX")}</span>}
@@ -356,7 +358,9 @@ export default function PlayerDashboard() {
                     <div className="h-1" style={{ backgroundColor: t.teamColorHex }} />
                   )}
                   <div className="p-5">
-                    <h3 className="font-display font-black text-xl uppercase text-white">{t.name}</h3>
+                    <Link href={`/tournament/${t.id}`} className="block hover:opacity-80 transition-opacity">
+                      <h3 className="font-display font-black text-xl uppercase text-white">{t.name}</h3>
+                    </Link>
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                       <span className={`text-xs px-2 py-1 rounded font-display uppercase tracking-wide ${
                         t.status === "ACTIVE"

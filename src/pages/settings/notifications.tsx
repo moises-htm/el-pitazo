@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { Bell, BellOff, MessageCircle, Calendar, Timer } from "lucide-react";
+import { Bell, BellOff, MessageCircle, Calendar, Timer, Globe, Sun, Moon } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/router";
+import { useI18n } from "@/lib/i18n";
+import { useTheme } from "@/lib/theme";
 
 export default function NotificationSettings() {
   const { user } = useAuthStore();
   const router = useRouter();
+  const { lang, setLang, t } = useI18n();
+  const { theme, toggle: toggleTheme } = useTheme();
   const [prefs, setPrefs] = useState({ newMessage: true, scheduleChange: true, matchReminder: true });
   const [pushEnabled, setPushEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -112,6 +116,44 @@ export default function NotificationSettings() {
             </button>
           </div>
         ))}
+
+        {/* Language toggle */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Globe size={18} className="text-gray-400" />
+            <div>
+              <p className="text-white font-medium">{t("settings.lang")}</p>
+              <p className="text-gray-400 text-sm">{lang === "es" ? "Español" : "English"}</p>
+            </div>
+          </div>
+          <div className="flex gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
+            <button
+              onClick={() => setLang("es")}
+              className={`px-3 py-1 rounded text-xs font-bold ${lang === "es" ? "bg-green-500 text-black" : "text-gray-400"}`}
+            >ES</button>
+            <button
+              onClick={() => setLang("en")}
+              className={`px-3 py-1 rounded text-xs font-bold ${lang === "en" ? "bg-green-500 text-black" : "text-gray-400"}`}
+            >EN</button>
+          </div>
+        </div>
+
+        {/* Theme toggle */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {theme === "dark" ? <Moon size={18} className="text-gray-400" /> : <Sun size={18} className="text-yellow-400" />}
+            <div>
+              <p className="text-white font-medium">{theme === "dark" ? t("settings.theme.dark") : t("settings.theme.light")}</p>
+              <p className="text-gray-400 text-sm">{theme === "dark" ? "Activado" : "Modo claro activo"}</p>
+            </div>
+          </div>
+          <button
+            onClick={toggleTheme}
+            className={`w-12 h-6 rounded-full transition-all ${theme === "dark" ? "bg-gray-600" : "bg-yellow-500"}`}
+          >
+            <span className={`block w-5 h-5 bg-white rounded-full shadow transition-transform ${theme === "dark" ? "translate-x-0.5" : "translate-x-6"}`} />
+          </button>
+        </div>
       </div>
     </div>
   );
