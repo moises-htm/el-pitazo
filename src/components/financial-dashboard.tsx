@@ -88,18 +88,24 @@ export function FinancialDashboard({ tournamentId }: { tournamentId?: string }) 
           </div>
           <div className="space-y-2">
             {summary.payments.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+              <a
+                key={p.id}
+                href={`/payment/${p.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between py-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors -mx-2 px-2 rounded"
+              >
                 <div>
                   <div className="text-white text-sm font-semibold">{p.team?.name || "—"}</div>
-                  <div className="text-gray-500 text-xs">{p.method}</div>
+                  <div className="text-gray-500 text-xs">{p.method} {p.paidAt ? `· ${new Date(p.paidAt).toLocaleDateString("es-MX")}` : ""}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-white font-semibold">{fmt(p.amount)}</span>
                   <span className={`text-xs px-2 py-0.5 rounded ${p.status === "COMPLETED" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>
-                    {p.status === "COMPLETED" ? "✓ Recibido" : "⏳ Pendiente"}
+                    {p.status === "COMPLETED" ? "✓ Recibo" : "⏳ Pendiente"}
                   </span>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </div>
