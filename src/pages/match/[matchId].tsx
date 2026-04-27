@@ -6,7 +6,10 @@ import { toast } from "sonner";
 import {
   ShieldAlert, Flag, ArrowLeftRight, AlertTriangle,
   Play, PauseCircle, CheckCircle2, ChevronLeft, Plus, X, Loader2,
+  FileText, QrCode,
 } from "lucide-react";
+import Link from "next/link";
+import { MatchTimer } from "@/components/match-timer";
 
 const EVENT_TYPES = [
   { type: "GOL", label: "Gol", icon: "⚽", color: "bg-green-600 hover:bg-green-500" },
@@ -246,6 +249,23 @@ export default function MatchPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
+        {/* Live timer + quick actions */}
+        {(inProgress || finished) && (
+          <div className="space-y-2">
+            <MatchTimer startedAt={match.startedAt} status={match.status} />
+            <div className="flex gap-2 flex-wrap">
+              <Link href={`/match/${matchId}/acta`} className="flex-1 min-w-[140px] bg-white/5 border border-white/10 hover:border-green-500/30 text-white text-xs font-display uppercase tracking-wide rounded-xl py-2 px-3 flex items-center justify-center gap-1.5">
+                <FileText size={14} /> Ver acta
+              </Link>
+              {isReferee && (
+                <Link href="/verify/scan" className="flex-1 min-w-[140px] bg-white/5 border border-white/10 hover:border-green-500/30 text-white text-xs font-display uppercase tracking-wide rounded-xl py-2 px-3 flex items-center justify-center gap-1.5">
+                  <QrCode size={14} /> Escanear credencial
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Referee controls */}
         {isReferee && !finished && (
           <div className="bg-gray-900 rounded-2xl p-4 border border-white/10">
