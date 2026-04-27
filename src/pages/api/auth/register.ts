@@ -16,10 +16,24 @@ export default async function handler(
     if (!data.phone && !data.email) {
       return res.status(400).json({ error: "Need phone or email" });
     }
+    if (data.email) {
+      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+      if (!EMAIL_RE.test(String(data.email).trim())) {
+        return res.status(400).json({ error: "Email no válido" });
+      }
+      data.email = String(data.email).trim().toLowerCase();
+    }
+    if (data.phone) {
+      const cleanedPhone = String(data.phone).replace(/[\s-()]/g, "");
+      if (!/^\+?[0-9]{7,15}$/.test(cleanedPhone)) {
+        return res.status(400).json({ error: "Teléfono no válido" });
+      }
+      data.phone = cleanedPhone;
+    }
     if (!data.password || data.password.length < 6) {
       return res.status(400).json({ error: "Password must be at least 6 characters" });
     }
-    if (!data.name) {
+    if (!data.name || !String(data.name).trim()) {
       return res.status(400).json({ error: "Name is required" });
     }
 

@@ -64,17 +64,34 @@ export default async function handler(
         }
       }
 
+      const parseDate = (v: any): Date | undefined => {
+        if (!v || typeof v !== "string" || !v.trim()) return undefined;
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? undefined : d;
+      };
+      const startDate = parseDate(rest.startDate);
+      const endDate = parseDate(rest.endDate);
+      if (rest.startDate && !startDate) return res.status(400).json({ error: "Fecha de inicio inválida" });
+      if (rest.endDate && !endDate) return res.status(400).json({ error: "Fecha de fin inválida" });
+      if (startDate && endDate && endDate < startDate) {
+        return res.status(400).json({ error: "La fecha de fin no puede ser anterior a la de inicio" });
+      }
+
+      const { startDate: _s, endDate: _e, regFee, ...cleanRest } = rest;
       const tournament = await prisma.tournament.create({
         data: {
-          ...rest,
+          ...cleanRest,
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
           creatorId,
-          regFee: parseFloat(rest.regFee) || 0,
+          regFee: parseFloat(regFee) || 0,
           ...(organizationId ? { organizationId } : {}),
         },
       });
       return res.json({ tournament });
     } catch (err: any) {
       if (err.code === "P2002") return res.status(409).json({ error: "Ya existe un torneo con ese nombre" });
+      console.error("Tournament create error:", err);
       return res.status(500).json({ error: "Error al crear el torneo" });
     }
   }

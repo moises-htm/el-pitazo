@@ -41,6 +41,12 @@ export default function RegisterPage() {
     if (form.password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres");
     if (!form.name.trim()) return setError("El nombre es obligatorio");
     if (!form.phone && !form.email) return setError("Necesitas teléfono o email");
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) {
+      return setError("Email no válido");
+    }
+    if (form.phone && !/^\+?[0-9]{7,15}$/.test(form.phone.replace(/[\s-()]/g, ""))) {
+      return setError("Teléfono no válido");
+    }
 
     setLoading(true);
     setError("");

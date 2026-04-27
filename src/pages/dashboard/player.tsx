@@ -304,8 +304,10 @@ export default function PlayerDashboard() {
               ) : tournaments.length === 0 ? (
                 <EmptyState icon="🏆" title="No hay torneos disponibles" sub={search ? "Intenta con otra búsqueda" : "Los torneos activos aparecerán aquí"} />
               ) : (
-                tournaments.map((t: any) => (
-                  <div key={t.id} className="card-glass card-glow p-5">
+                tournaments.map((t: any) => {
+                  const hasMap = (t.fieldLat && t.fieldLng) || t.fieldAddress;
+                  return (
+                  <Link key={t.id} href={`/tournament/${t.id}`} className="card-glass card-glow p-5 block hover:border-emerald-400/30 transition-colors">
                     {t.colorHex && (
                       <div className="h-1 rounded-full mb-4 -mt-1" style={{ backgroundColor: t.colorHex }} />
                     )}
@@ -317,25 +319,26 @@ export default function PlayerDashboard() {
                         </div>
                         <h3 className="font-display font-black text-xl uppercase text-white mb-1 truncate">{t.name}</h3>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-400 text-sm">
-                          {t.fieldLocation && <span className="flex items-center gap-1"><MapPin size={14} />{t.fieldLocation}</span>}
+                          {t.fieldLocation && !hasMap && <span className="flex items-center gap-1"><MapPin size={14} />{t.fieldLocation}</span>}
                           {t.startDate && <span className="flex items-center gap-1"><Clock size={14} />{new Date(t.startDate).toLocaleDateString("es-MX")}</span>}
                           <span className="flex items-center gap-1"><DollarSign size={14} />{Number(t.regFee).toLocaleString("es-MX")} {t.currency}</span>
                         </div>
-                        {(t.fieldLat || t.fieldAddress) && (
+                        {hasMap && (
                           <div className="mt-3">
                             <LocationMap lat={t.fieldLat} lng={t.fieldLng} address={t.fieldAddress} name={t.fieldLocation} compact />
                           </div>
                         )}
                       </div>
                       <button
-                        onClick={() => { setJoinTournament(t); setJoinTeamName(""); }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setJoinTournament(t); setJoinTeamName(""); }}
                         className="btn-neon shrink-0 px-4 py-2 text-sm active:scale-95 transition-transform"
                       >
                         Inscribirse
                       </button>
                     </div>
-                  </div>
-                ))
+                  </Link>
+                  );
+                })
               )}
             </div>
           </>
@@ -356,7 +359,9 @@ export default function PlayerDashboard() {
                     <div className="h-1" style={{ backgroundColor: t.teamColorHex }} />
                   )}
                   <div className="p-5">
-                    <h3 className="font-display font-black text-xl uppercase text-white">{t.name}</h3>
+                    <Link href={`/tournament/${t.id}`} className="hover:text-emerald-300 transition-colors">
+                      <h3 className="font-display font-black text-xl uppercase text-white">{t.name}</h3>
+                    </Link>
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                       <span className={`text-xs px-2 py-1 rounded font-display uppercase tracking-wide ${
                         t.status === "ACTIVE"
