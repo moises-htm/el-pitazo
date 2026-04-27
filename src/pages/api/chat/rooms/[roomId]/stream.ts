@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
+import { listTyping } from "@/lib/chat-typing";
 
 const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
 
@@ -86,6 +87,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } else {
         send(": heartbeat\n\n");
       }
+
+      const typing = listTyping(roomId, userId);
+      send(`event: typing\n`);
+      send(`data: ${JSON.stringify({ users: typing })}\n\n`);
     } catch {
       send(": error\n\n");
     }

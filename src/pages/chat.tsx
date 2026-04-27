@@ -38,6 +38,19 @@ function formatTime(dateStr: string) {
   }
 }
 
+function formatAbsoluteTime(dateStr: string) {
+  try {
+    return new Date(dateStr).toLocaleString("es-MX", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
 export default function ChatPage() {
   const router = useRouter();
   const { user, token, hydrated, hydrate } = useAuthStore();
@@ -52,11 +65,15 @@ export default function ChatPage() {
   const [showRooms, setShowRooms] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const selectedRoomRef = useRef<ChatRoom | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const sseErrorCountRef = useRef(0);
   const sseActiveRef = useRef(false);
+  const typingPingRef = useRef<number>(0);
+
+  const [typingUsers, setTypingUsers] = useState<{ userId: string; userName: string }[]>([]);
 
   useEffect(() => {
     selectedRoomRef.current = selectedRoom;
@@ -78,8 +95,13 @@ export default function ChatPage() {
   }, [token]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const scroller = messagesScrollRef.current;
+    if (!scroller) return;
+    const distanceFromBottom = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+    if (distanceFromBottom < 120) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, typingUsers]);
 
   // Cleanup all real-time connections on unmount
   useEffect(() => {
@@ -164,6 +186,15 @@ export default function ChatPage() {
         }
       };
 
+      es.addEventListener("typing", (e: MessageEvent) => {
+        try {
+          const data = JSON.parse(e.data) as { users: { userId: string; userName: string }[] };
+          setTypingUsers(data.users.filter((u) => u.userId !== user?.id));
+        } catch {
+          // ignore
+        }
+      });
+
       es.onerror = () => {
         sseErrorCountRef.current += 1;
         if (sseErrorCountRef.current >= 3) {
@@ -229,6 +260,14 @@ export default function ChatPage() {
       e.preventDefault();
       sendMessage();
     }
+  }
+
+  function pingTyping() {
+    if (!selectedRoom) return;
+    const now = Date.now();
+    if (now - typingPingRef.current < 2000) return;
+    typingPingRef.current = now;
+    api(`/api/chat/rooms/${selectedRoom.id}/typing`, { method: "POST", body: "{}" }).catch(() => {});
   }
 
   if (!hydrated || !token) {
@@ -390,7 +429,7 @@ export default function ChatPage() {
         ) : (
           <>
             {/* Messages scroll area */}
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
+            <div ref={messagesScrollRef} className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
               {loadingMessages ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -429,13 +468,28 @@ export default function ChatPage() {
                           </div>
                         )}
                         <p className="text-sm leading-snug">{msg.body}</p>
-                        <div className="text-[10px] text-gray-600 mt-0.5 px-1">
+                        <div
+                          className="text-[10px] text-gray-600 mt-0.5 px-1"
+                          title={formatAbsoluteTime(msg.createdAt)}
+                        >
                           {formatTime(msg.createdAt)}
                         </div>
                       </div>
                     </div>
                   );
                 })
+              )}
+              {typingUsers.length > 0 && (
+                <div className="mr-auto px-3 py-2 mt-1 text-xs text-gray-400 italic flex items-center gap-2">
+                  <span className="flex gap-1" aria-hidden>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "120ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "240ms" }} />
+                  </span>
+                  {typingUsers.length === 1
+                    ? `${typingUsers[0].userName} está escribiendo…`
+                    : `${typingUsers.length} personas escribiendo…`}
+                </div>
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -445,7 +499,7 @@ export default function ChatPage() {
               <div className="flex items-end gap-2">
                 <textarea
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => { setInput(e.target.value); pingTyping(); }}
                   onKeyDown={handleKeyDown}
                   placeholder="Escribe un mensaje..."
                   rows={1}
