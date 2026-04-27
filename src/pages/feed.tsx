@@ -17,6 +17,13 @@ interface Post {
   isFeatured: boolean;
   createdAt: string;
   uploader: { id: string; name: string; avatar?: string };
+  tournamentId?: string | null;
+  teamId?: string | null;
+}
+
+function youtubeId(url: string): string | null {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  return m ? m[1] : null;
 }
 
 interface Comment {
@@ -41,13 +48,23 @@ export default function FeedPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadCaption, setUploadCaption] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadYoutube, setUploadYoutube] = useState("");
+  const [tournamentFilter, setTournamentFilter] = useState<string>("");
+  const [myTournaments, setMyTournaments] = useState<any[]>([]);
 
-  useEffect(() => { fetchPosts(1); }, []);
+  useEffect(() => { fetchPosts(1); }, [tournamentFilter]);
+
+  useEffect(() => {
+    if (!token) return;
+    api("/api/player/tournaments").then((d: any) => setMyTournaments(d.tournaments || [])).catch(() => {});
+  }, [token]);
 
   async function fetchPosts(p: number) {
     setLoading(true);
     try {
-      const data = await api<{ posts: Post[] }>(`/api/feed?page=${p}`, token ? { auth: true } : {});
+      const params = new URLSearchParams({ page: String(p) });
+      if (tournamentFilter) params.set("tournamentId", tournamentFilter);
+      const data = await api<{ posts: Post[] }>(`/api/feed?${params.toString()}`, token ? { auth: true } : {});
       if (p === 1) setPosts(data.posts);
       else setPosts(prev => [...prev, ...data.posts]);
       setHasMore(data.posts.length === 10);
@@ -92,23 +109,34 @@ export default function FeedPage() {
   }
 
   async function uploadVideo() {
-    if (!uploadFile) { toast.error("Selecciona un video"); return; }
     if (!token) { toast.error("Inicia sesión para subir videos"); return; }
+    const ytTrim = uploadYoutube.trim();
+    const ytId = ytTrim ? youtubeId(ytTrim) : null;
+    if (!uploadFile && !ytId) {
+      toast.error(ytTrim ? "URL de YouTube no válida" : "Selecciona un video o pega una URL de YouTube");
+      return;
+    }
     setUploading(true);
     try {
-      // Upload to Vercel Blob
-      const uploadRes = await fetch(`/api/feed/upload?filename=${encodeURIComponent(uploadFile.name)}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: uploadFile,
-      });
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json();
-        throw new Error(err.error || "Error al subir");
+      let videoUrl: string;
+      if (ytId) {
+        videoUrl = `https://youtu.be/${ytId}`;
+      } else if (uploadFile) {
+        const uploadRes = await fetch(`/api/feed/upload?filename=${encodeURIComponent(uploadFile.name)}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: uploadFile,
+        });
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json();
+          throw new Error(err.error || "Error al subir");
+        }
+        const j = await uploadRes.json();
+        videoUrl = j.url;
+      } else {
+        return;
       }
-      const { url: videoUrl } = await uploadRes.json();
 
-      // Create post
       await api("/api/feed", {
         method: "POST",
         auth: true,
@@ -120,6 +148,7 @@ export default function FeedPage() {
       setShowUploadModal(false);
       setUploadCaption("");
       setUploadFile(null);
+      setUploadYoutube("");
       fetchPosts(1);
     } catch (e: any) {
       toast.error(e.message || "Error al publicar");
@@ -139,6 +168,18 @@ export default function FeedPage() {
           <span className="text-gray-600 text-xs font-display uppercase tracking-widest">FEED</span>
         </div>
         <div className="flex items-center gap-2">
+          {token && myTournaments.length > 0 && (
+            <select
+              value={tournamentFilter}
+              onChange={(e) => setTournamentFilter(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 px-2 py-1 focus:outline-none focus:border-[#39FF14] max-w-[140px]"
+            >
+              <option value="">Todos los torneos</option>
+              {myTournaments.map((t: any) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
           {!token && (
             <Link href="/auth/login" className="text-gray-400 hover:text-[#39FF14] text-sm font-display uppercase tracking-wide transition-colors">
               Entrar
@@ -175,14 +216,30 @@ export default function FeedPage() {
                 {/* Video — full width, 9:16 on mobile, constrained on desktop */}
                 <div className="rounded-t-3xl overflow-hidden relative w-full mx-auto" style={{ maxWidth: '480px' }}>
                   <div style={{ aspectRatio: '9/16', position: 'relative', background: '#111' }}>
-                    <video
-                      src={post.videoUrl}
-                      poster={post.thumbnailUrl}
-                      className="w-full aspect-video object-cover"
-                      controls
-                      playsInline
-                      preload="metadata"
-                    />
+                    {(() => {
+                      const yt = youtubeId(post.videoUrl);
+                      if (yt) {
+                        return (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${yt}?rel=0&modestbranding=1`}
+                            className="w-full h-full absolute inset-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            title={post.caption || "Video"}
+                          />
+                        );
+                      }
+                      return (
+                        <video
+                          src={post.videoUrl}
+                          poster={post.thumbnailUrl}
+                          className="w-full aspect-video object-cover"
+                          controls
+                          playsInline
+                          preload="metadata"
+                        />
+                      );
+                    })()}
 
                     {/* RIGHT SIDE — floating action buttons (TikTok style) */}
                     <div className="absolute right-3 bottom-20 flex flex-col items-center gap-5 z-20">
@@ -359,6 +416,13 @@ export default function FeedPage() {
               </button>
             )}
 
+            <div className="text-center text-gray-500 text-xs my-2 font-display uppercase tracking-wide">— o —</div>
+            <input
+              value={uploadYoutube}
+              onChange={(e) => setUploadYoutube(e.target.value)}
+              placeholder="Pega URL de YouTube"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#39FF14] mb-3"
+            />
             <textarea
               value={uploadCaption}
               onChange={e => setUploadCaption(e.target.value)}
@@ -369,7 +433,7 @@ export default function FeedPage() {
 
             <button
               onClick={uploadVideo}
-              disabled={!uploadFile || uploading}
+              disabled={(!uploadFile && !uploadYoutube.trim()) || uploading}
               className="btn-neon w-full disabled:opacity-50 py-3 rounded-xl font-semibold transition-all">
               {uploading ? "Subiendo..." : "Publicar video"}
             </button>
