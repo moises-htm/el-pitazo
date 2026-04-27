@@ -44,11 +44,18 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
     const handler = (e: any) => {
       e.preventDefault();
       setInstallPrompt(e);
-      setShowInstallBanner(true);
+      // Honor recent dismiss (7 days)
+      const dismissed = Number(localStorage.getItem("pwa-dismissed-at") || 0);
+      if (Date.now() - dismissed > 7 * 86400_000) setShowInstallBanner(true);
     };
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
+
+  function dismissInstall() {
+    localStorage.setItem("pwa-dismissed-at", String(Date.now()));
+    setShowInstallBanner(false);
+  }
 
   async function installApp() {
     if (!installPrompt) return;
@@ -74,7 +81,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } }:
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setShowInstallBanner(false)} className="text-gray-400 text-sm px-3 py-1.5 transition-colors hover:text-white">No ahora</button>
+            <button onClick={dismissInstall} className="text-gray-400 text-sm px-3 py-1.5 transition-colors hover:text-white">No ahora</button>
             <button onClick={installApp} className="bg-green-500 hover:bg-green-400 text-black text-sm px-4 py-1.5 rounded-lg font-bold transition-all active:scale-95">Instalar</button>
           </div>
         </div>

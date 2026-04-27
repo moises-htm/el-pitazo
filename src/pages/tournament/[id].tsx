@@ -163,12 +163,15 @@ export default function TournamentPage() {
               {tournament.description && <p className="text-gray-400 text-sm mt-1">{tournament.description}</p>}
             </div>
             <div className="flex flex-col gap-2">
-              <button onClick={shareLink} className="p-2 rounded-lg bg-white/5 border border-white/10 hover:border-green-500/40 text-gray-400 hover:text-green-400">
+              <button onClick={shareLink} className="p-2 rounded-lg bg-white/5 border border-white/10 hover:border-green-500/40 text-gray-400 hover:text-green-400" title="Compartir">
                 <Share2 size={18} />
               </button>
-              <button onClick={downloadIcs} className="p-2 rounded-lg bg-white/5 border border-white/10 hover:border-green-500/40 text-gray-400 hover:text-green-400" title=".ics">
+              <button onClick={downloadIcs} className="p-2 rounded-lg bg-white/5 border border-white/10 hover:border-green-500/40 text-gray-400 hover:text-green-400" title="Calendario .ics">
                 <Download size={18} />
               </button>
+              <a href={`/api/tournaments/${id}/export?what=standings`} className="p-2 rounded-lg bg-white/5 border border-white/10 hover:border-green-500/40 text-gray-400 hover:text-green-400 text-[10px] font-display uppercase tracking-wide" title="Excel/CSV">
+                XLS
+              </a>
             </div>
           </div>
         </div>
