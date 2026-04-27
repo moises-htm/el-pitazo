@@ -3,11 +3,10 @@ import { useRouter } from "next/router";
 import { Home, Trophy, Rss, MessageCircle, User } from "lucide-react";
 
 const tabs = [
-  { href: "/", icon: Home, label: "Inicio" },
-  { href: "/dashboard", icon: Trophy, label: "Torneos" },
+  { href: "/dashboard", icon: Home, label: "Inicio" },
   { href: "/feed", icon: Rss, label: "Feed" },
   { href: "/chat", icon: MessageCircle, label: "Chat" },
-  { href: "/settings/notifications", icon: User, label: "Perfil" },
+  { href: "/profile", icon: User, label: "Perfil" },
 ];
 
 export function BottomNav() {
