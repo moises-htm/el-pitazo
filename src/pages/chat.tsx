@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useAuthStore } from "@/lib/auth";
 import { api } from "@/lib/api";
-import { MessageCircle, Send, Users, Trophy, User2, ArrowLeft, X } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { MessageCircle, Send, Users, Trophy, User2, ArrowLeft, X, ArrowDown } from "lucide-react";
+import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface ChatRoom {
@@ -32,10 +32,32 @@ function Skeleton({ className }: { className?: string }) {
 
 function formatTime(dateStr: string) {
   try {
-    return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: es });
+    const d = new Date(dateStr);
+    if (isToday(d)) return format(d, "HH:mm");
+    if (isYesterday(d)) return `Ayer ${format(d, "HH:mm")}`;
+    const days = (Date.now() - d.getTime()) / 86400000;
+    if (days < 7) return format(d, "EEE HH:mm", { locale: es });
+    return format(d, "d MMM HH:mm", { locale: es });
   } catch {
     return "";
   }
+}
+
+function formatAbsolute(dateStr: string) {
+  try {
+    return format(new Date(dateStr), "PPpp", { locale: es });
+  } catch {
+    return "";
+  }
+}
+
+function dayLabel(dateStr: string) {
+  try {
+    const d = new Date(dateStr);
+    if (isToday(d)) return "Hoy";
+    if (isYesterday(d)) return "Ayer";
+    return format(d, "EEEE d 'de' MMMM", { locale: es });
+  } catch { return ""; }
 }
 
 export default function ChatPage() {
@@ -52,11 +74,17 @@ export default function ChatPage() {
   const [showRooms, setShowRooms] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesBoxRef = useRef<HTMLDivElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const selectedRoomRef = useRef<ChatRoom | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const sseErrorCountRef = useRef(0);
   const sseActiveRef = useRef(false);
+  const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastTypingPingRef = useRef(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   useEffect(() => {
     selectedRoomRef.current = selectedRoom;
@@ -77,9 +105,53 @@ export default function ChatPage() {
     fetchRooms();
   }, [token]);
 
+  // Auto-scroll only if user is near bottom; otherwise increment unread badge
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!messages.length) return;
+    if (isAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      setUnreadCount(0);
+    } else {
+      setUnreadCount((c) => c + 1);
+      // browser notification on new message if tab is hidden
+      if (typeof document !== "undefined" && document.hidden && "Notification" in window && Notification.permission === "granted") {
+        const last = messages[messages.length - 1];
+        if (last && last.userId !== user?.id) {
+          try {
+            new Notification(last.userName, { body: last.body, icon: "/icons/icon-192.png" });
+          } catch {}
+        }
+      }
+    }
+  }, [messages.length, isAtBottom, user?.id]);
+
+  // Track scroll position to know when to auto-scroll vs show "new" badge
+  useEffect(() => {
+    const el = messagesBoxRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const atBottom = dist < 80;
+      setIsAtBottom(atBottom);
+      if (atBottom) setUnreadCount(0);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [selectedRoom?.id]);
+
+  // Poll typing indicator
+  useEffect(() => {
+    if (!selectedRoom) return;
+    if (typingTimerRef.current) clearInterval(typingTimerRef.current);
+    const id = setInterval(async () => {
+      try {
+        const data = await api<{ typing: string[] }>(`/api/chat/rooms/${selectedRoom.id}/typing`);
+        setTypingUsers(data.typing || []);
+      } catch {}
+    }, 2500);
+    typingTimerRef.current = id;
+    return () => { clearInterval(id); typingTimerRef.current = null; };
+  }, [selectedRoom?.id]);
 
   // Cleanup all real-time connections on unmount
   useEffect(() => {
@@ -229,6 +301,19 @@ export default function ChatPage() {
       e.preventDefault();
       sendMessage();
     }
+  }
+
+  function pingTyping() {
+    if (!selectedRoom) return;
+    const now = Date.now();
+    if (now - lastTypingPingRef.current < 2000) return;
+    lastTypingPingRef.current = now;
+    api(`/api/chat/rooms/${selectedRoom.id}/typing`, { method: "POST" }).catch(() => {});
+  }
+
+  function scrollToBottom() {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setUnreadCount(0);
   }
 
   if (!hydrated || !token) {
@@ -390,7 +475,7 @@ export default function ChatPage() {
         ) : (
           <>
             {/* Messages scroll area */}
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
+            <div ref={messagesBoxRef} className="flex-1 overflow-y-auto p-4 flex flex-col gap-1 relative">
               {loadingMessages ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -406,38 +491,71 @@ export default function ChatPage() {
                   <p className="font-display uppercase">No hay mensajes aún. ¡Sé el primero!</p>
                 </div>
               ) : (
-                messages.map((msg) => {
+                messages.map((msg, idx) => {
                   const isOwn = msg.userId === user?.id;
+                  const prev = messages[idx - 1];
+                  const showDay = !prev || new Date(prev.createdAt).toDateString() !== new Date(msg.createdAt).toDateString();
+                  const sameAuthorAsPrev = prev && !showDay && prev.userId === msg.userId
+                    && (new Date(msg.createdAt).getTime() - new Date(prev.createdAt).getTime()) < 60_000;
                   return (
-                    <div
-                      key={msg.id}
-                      className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={
-                          isOwn
-                            ? "ml-auto max-w-[75%] bg-gradient-to-br from-green-500/30 to-emerald-600/20 border border-green-500/20 text-white rounded-3xl rounded-br-sm px-4 py-3 mb-1"
-                            : "mr-auto max-w-[75%] backdrop-blur-xl bg-white/5 border border-white/10 text-gray-200 rounded-3xl rounded-bl-sm px-4 py-3 mb-1"
-                        }
-                      >
-                        {!isOwn && (
-                          <div
-                            className="text-[10px] font-display font-bold uppercase tracking-widest mb-0.5"
-                            style={{ color: "#39FF14" }}
-                          >
-                            {msg.userName}
+                    <div key={msg.id}>
+                      {showDay && (
+                        <div className="flex items-center justify-center my-3">
+                          <span className="text-[10px] font-display uppercase tracking-widest text-gray-500 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                            {dayLabel(msg.createdAt)}
+                          </span>
+                        </div>
+                      )}
+                      <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                        <div
+                          title={formatAbsolute(msg.createdAt)}
+                          className={
+                            isOwn
+                              ? `ml-auto max-w-[75%] bg-gradient-to-br from-green-500/30 to-emerald-600/20 border border-green-500/20 text-white rounded-3xl ${sameAuthorAsPrev ? "rounded-tr-md" : "rounded-br-sm"} px-4 py-3 ${sameAuthorAsPrev ? "mt-0.5" : "mt-1"}`
+                              : `mr-auto max-w-[75%] backdrop-blur-xl bg-white/5 border border-white/10 text-gray-200 rounded-3xl ${sameAuthorAsPrev ? "rounded-tl-md" : "rounded-bl-sm"} px-4 py-3 ${sameAuthorAsPrev ? "mt-0.5" : "mt-1"}`
+                          }
+                        >
+                          {!isOwn && !sameAuthorAsPrev && (
+                            <div className="text-[10px] font-display font-bold uppercase tracking-widest mb-0.5" style={{ color: "#39FF14" }}>
+                              {msg.userName}
+                            </div>
+                          )}
+                          <p className="text-sm leading-snug whitespace-pre-wrap break-words">{msg.body}</p>
+                          <div className="text-[10px] text-gray-600 mt-0.5 px-1 tabular-nums">
+                            {formatTime(msg.createdAt)}
                           </div>
-                        )}
-                        <p className="text-sm leading-snug">{msg.body}</p>
-                        <div className="text-[10px] text-gray-600 mt-0.5 px-1">
-                          {formatTime(msg.createdAt)}
                         </div>
                       </div>
                     </div>
                   );
                 })
               )}
+              {typingUsers.length > 0 && (
+                <div className="flex justify-start mt-1">
+                  <div className="mr-auto bg-white/5 border border-white/10 text-gray-400 text-xs rounded-2xl px-3 py-1.5 flex items-center gap-2">
+                    <span className="flex gap-1">
+                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </span>
+                    <span className="font-display uppercase tracking-wide">
+                      {typingUsers.length === 1 ? `${typingUsers[0]} está escribiendo` : `${typingUsers.length} escribiendo`}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
+
+              {/* Floating "new messages" badge */}
+              {!isAtBottom && unreadCount > 0 && (
+                <button
+                  onClick={scrollToBottom}
+                  className="sticky bottom-4 self-center z-10 px-4 py-2 rounded-full bg-green-500 text-black font-display uppercase text-xs tracking-wide shadow-lg flex items-center gap-2 animate-fade-in-up"
+                >
+                  <ArrowDown size={14} />
+                  {unreadCount} nuevo{unreadCount > 1 ? "s" : ""}
+                </button>
+              )}
             </div>
 
             {/* Input area */}
@@ -445,7 +563,7 @@ export default function ChatPage() {
               <div className="flex items-end gap-2">
                 <textarea
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => { setInput(e.target.value); pingTyping(); }}
                   onKeyDown={handleKeyDown}
                   placeholder="Escribe un mensaje..."
                   rows={1}
