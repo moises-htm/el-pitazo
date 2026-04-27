@@ -180,11 +180,23 @@ export default function OrganizerDashboard() {
                     </div>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <WhatsAppShareButton
-                        text={`¡Inscribe tu equipo en ${t.name}! ⚽ El torneo empieza pronto. Regístrate en https://elpitazo.app/tournaments/${t.id}`}
+                        text={`¡Inscribe tu equipo en ${t.name}! ⚽ El torneo empieza pronto. Regístrate en https://elpitazo.app/tournament/${t.id}`}
                         label="Compartir torneo"
                         compact={true}
                       />
-                      <span className={`text-xs px-2 py-1 rounded ${t.status === "ACTIVE" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}`}>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const data: any = await api(`/api/tournaments/${t.id}/duplicate`, { method: "POST" });
+                            setTournaments((prev) => [data.tournament, ...prev]);
+                          } catch (e: any) { /* swallow */ }
+                        }}
+                        title="Duplicar"
+                        className="text-gray-400 hover:text-green-400 text-xs px-2 py-1 rounded bg-white/5 border border-white/10"
+                      >
+                        Copiar
+                      </button>
+                      <span className={`text-xs px-2 py-1 rounded ${t.status === "ACTIVE" ? "bg-green-500/20 text-green-400" : t.status === "DRAFT" ? "bg-yellow-500/20 text-yellow-400" : "bg-gray-500/20 text-gray-400"}`}>
                         {t.status}
                       </span>
                     </div>
