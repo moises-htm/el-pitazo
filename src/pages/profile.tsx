@@ -41,6 +41,7 @@ export default function ProfilePage() {
 
   const [tab, setTab] = useState<"stats" | "history" | "badges" | "edit">("stats");
   const [stats, setStats] = useState<Stats | null>(null);
+  const [streak, setStreak] = useState<number>(0);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [history, setHistory] = useState<ProfileTournament[]>([]);
   const [profile, setProfile] = useState<any>(null);
@@ -57,6 +58,7 @@ export default function ProfilePage() {
     fetchProfile();
     fetchBadges();
     fetchHistory();
+    api<{ streak: number }>("/api/player/streak").then((d) => setStreak(d.streak)).catch(() => {});
   }, [user?.id]);
 
   async function fetchProfile() {
@@ -231,7 +233,12 @@ export default function ProfilePage() {
                   <div className={`text-4xl font-display font-black ${s.color} tabular-nums`}>{s.value}</div>
                   <div className="text-xs text-gray-500 font-display uppercase tracking-wider mt-1">{s.label}</div>
                 </div>
-              ))
+              )).concat(
+                <div key="streak" className="bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/30 rounded-2xl p-4 text-center col-span-2 sm:col-span-3">
+                  <div className="text-4xl font-display font-black text-orange-400 tabular-nums">🔥 {streak}</div>
+                  <div className="text-xs text-orange-300 font-display uppercase tracking-wider mt-1">Racha de asistencia</div>
+                </div>
+              )
             ) : (
               <div className="col-span-full text-gray-500 text-sm text-center py-8">Cargando stats...</div>
             )}

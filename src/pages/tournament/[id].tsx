@@ -6,6 +6,7 @@ import { ArrowLeft, Trophy, Calendar, ListOrdered, Wallet, Users, Share2, Downlo
 import { StandingsTable } from "@/components/standings-table";
 import { BracketView } from "@/components/bracket-view";
 import { FinancialDashboard } from "@/components/financial-dashboard";
+import { Leaderboard } from "@/components/leaderboard";
 import { useI18n } from "@/lib/i18n";
 
 interface Tournament {
@@ -266,7 +267,22 @@ export default function TournamentPage() {
           </>
         )}
 
-        {tab === "standings" && <StandingsTable tournamentId={id} />}
+        {tab === "standings" && (
+          <>
+            <div className="flex justify-end">
+              <a
+                href={`/share/standings/${id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-green-500/40 text-gray-300 hover:text-green-400 flex items-center gap-1.5"
+              >
+                Compartir tabla
+              </a>
+            </div>
+            <StandingsTable tournamentId={id} />
+            <Leaderboard tournamentId={id} eventType="GOL" />
+          </>
+        )}
 
         {tab === "finance" && <FinancialDashboard tournamentId={id} />}
       </div>
