@@ -2,14 +2,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import { sendPushToUser } from "@/lib/push";
+import { verifyCronSecret } from "@/lib/cron-auth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
-  const secret = req.headers["x-cron-secret"] ?? req.query.secret;
-  if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  const auth = verifyCronSecret(req);
+  if (!auth.ok) return res.status(auth.status).json({ error: auth.message });
 
   try {
     const now = new Date();

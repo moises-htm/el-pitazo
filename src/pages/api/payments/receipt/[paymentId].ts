@@ -1,6 +1,7 @@
 // GET /api/payments/receipt/[paymentId] — Digital receipt (printable HTML)
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { getUserId } from "@/lib/server-auth";
 
 function escape(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]!));
@@ -8,17 +9,26 @@ function escape(s: string): string {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") return res.status(405).end();
+  const userId = getUserId(req);
+  if (!userId) return res.status(401).send("No autorizado");
+
   const { paymentId } = req.query as { paymentId: string };
 
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
-      tournament: { select: { name: true, currency: true, fieldLocation: true } },
-      team: { select: { name: true } },
+      tournament: { select: { name: true, currency: true, fieldLocation: true, creatorId: true } },
+      team: { select: { name: true, captainId: true } },
       user: { select: { name: true, email: true, phone: true } },
     },
   });
   if (!payment) return res.status(404).send("Recibo no encontrado");
+
+  const isOwner =
+    payment.userId === userId ||
+    payment.team?.captainId === userId ||
+    payment.tournament?.creatorId === userId;
+  if (!isOwner) return res.status(403).send("Sin acceso");
 
   const date = (payment.paidAt ?? payment.createdAt).toLocaleString("es-MX", { dateStyle: "long", timeStyle: "short" });
   const amountText = `${Number(payment.amount).toLocaleString("es-MX", { minimumFractionDigits: 2 })} ${payment.currency}`;

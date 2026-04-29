@@ -26,6 +26,8 @@ interface ChatMessage {
   createdAt: string;
 }
 
+const MAX_MESSAGES = 200;
+
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
 }
@@ -178,9 +180,12 @@ export default function ChatPage() {
       es.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data) as ChatMessage;
-          setMessages((prev) =>
-            prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]
-          );
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            const next = [...prev, msg];
+            // Cap in-memory history; older messages remain on the server.
+            return next.length > MAX_MESSAGES ? next.slice(-MAX_MESSAGES) : next;
+          });
         } catch {
           // ignore parse errors
         }

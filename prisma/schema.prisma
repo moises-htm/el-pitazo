@@ -258,6 +258,9 @@ model BracketMatch {
   scheduleChanges ScheduleChangeRequest[]
 
   @@index([roundId])
+  @@index([status, scheduledAt])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
   @@map("bracket_matches")
 }
 
@@ -291,7 +294,7 @@ model Payment {
   currency              String          @default("MXN")
   method                PaymentMethod
   status                PaymentStatus   @default(PENDING)
-  externalId            String?
+  externalId            String?         @unique
   receiptUrl            String?
   paidAt                DateTime?
   createdAt             DateTime        @default(now())
@@ -300,6 +303,7 @@ model Payment {
   @@index([teamId])
   @@index([userId])
   @@index([status])
+  @@index([status, createdAt])
   @@map("payments")
 }
 
@@ -484,6 +488,7 @@ model FeedPost {
 
   @@index([createdAt])
   @@index([uploaderId])
+  @@index([tournamentId, createdAt])
   @@map("feed_posts")
 }
 
@@ -614,4 +619,13 @@ model ChatMessage {
 
   @@index([roomId, createdAt])
   @@map("chat_messages")
+}
+
+model ProcessedWebhookEvent {
+  id         String   @id
+  provider   String
+  receivedAt DateTime @default(now())
+
+  @@index([provider, receivedAt])
+  @@map("processed_webhook_events")
 }

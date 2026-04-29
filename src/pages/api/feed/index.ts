@@ -45,8 +45,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const userId = getUserId(req);
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const { videoUrl, thumbnailUrl, caption, teamId, tournamentId } = req.body as any;
-    if (!videoUrl) return res.status(400).json({ error: "videoUrl requerida" });
+    const { videoUrl, thumbnailUrl, caption, teamId, tournamentId } = req.body as {
+      videoUrl?: string;
+      thumbnailUrl?: string;
+      caption?: string;
+      teamId?: string;
+      tournamentId?: string;
+    };
+    if (!videoUrl || typeof videoUrl !== "string") {
+      return res.status(400).json({ error: "videoUrl requerida" });
+    }
+    if (caption && caption.length > 500) {
+      return res.status(400).json({ error: "Caption muy largo (máx 500)" });
+    }
+
+    // Authorization: a post tagged with teamId requires membership; tagged with
+    // tournamentId requires being on a team in that tournament OR being the creator.
+    if (teamId) {
+      const member = await prisma.teamMember.findFirst({
+        where: { teamId, userId },
+        select: { id: true },
+      });
+      if (!member) return res.status(403).json({ error: "No perteneces a ese equipo" });
+    }
+    if (tournamentId) {
+      const [creator, member] = await Promise.all([
+        prisma.tournament.findFirst({
+          where: { id: tournamentId, creatorId: userId },
+          select: { id: true },
+        }),
+        prisma.teamMember.findFirst({
+          where: { userId, team: { tournamentId } },
+          select: { id: true },
+        }),
+      ]);
+      if (!creator && !member) {
+        return res.status(403).json({ error: "Sin acceso a ese torneo" });
+      }
+    }
 
     const post = await prisma.feedPost.create({
       data: { uploaderId: userId, videoUrl, thumbnailUrl, caption, teamId, tournamentId },

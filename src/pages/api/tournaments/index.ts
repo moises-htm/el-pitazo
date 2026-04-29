@@ -1,21 +1,15 @@
 // /api/tournaments — All tournament operations
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
-import jwt from "jsonwebtoken";
 import { TournamentStatus } from "@prisma/client";
+import { verifyToken as verifyJwt } from "@/lib/server-auth";
 
 const VALID_STATUSES = new Set<string>(Object.values(TournamentStatus));
 
-const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
-
-function verifyToken(req: NextApiRequest) {
+function verifyToken(req: NextApiRequest): { userId: string } | null {
   const authHeader = req.headers?.authorization;
   if (!authHeader?.startsWith("Bearer ")) return null;
-  try {
-    return jwt.verify(authHeader.split(" ")[1], JWT_SECRET);
-  } catch {
-    return null;
-  }
+  return verifyJwt(authHeader.slice(7));
 }
 
 export default async function handler(
@@ -51,7 +45,7 @@ export default async function handler(
 
     try {
       const data = JSON.parse(JSON.stringify(req.body)) as any;
-      const creatorId = (token as any).userId;
+      const creatorId = token.userId;
       const { organizationId, ...rest } = data;
 
       // If organizationId is provided, verify the user is ADMIN+ in that org

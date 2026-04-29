@@ -186,6 +186,7 @@ export default function OnboardingPage() {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [textVal, setTextVal] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const primaryRole: string = user?.role?.[0] ?? "PLAYER";
   const questions = questionsForRole(primaryRole);
@@ -253,8 +254,9 @@ export default function OnboardingPage() {
 
   async function saveOnboarding(data: Record<string, string | string[]>) {
     setSaving(true);
+    setSaveError(null);
     try {
-      await fetch("/api/onboarding", {
+      const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -262,14 +264,16 @@ export default function OnboardingPage() {
         },
         body: JSON.stringify({ onboardingData: data, complete: true }),
       });
-    } catch {
-      // non-fatal — user still proceeds
-    } finally {
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `Error ${res.status}`);
+      }
       setSaving(false);
-      // Brief processing animation then redirect
-      setTimeout(() => {
-        router.replace("/dashboard");
-      }, 2200);
+      setTimeout(() => router.replace("/dashboard"), 2200);
+    } catch (e) {
+      setSaving(false);
+      setSaveError(e instanceof Error ? e.message : "No pudimos guardar tus respuestas");
+      // Stay on processing step; user can retry via the error UI.
     }
   }
 
@@ -336,15 +340,34 @@ export default function OnboardingPage() {
   if (step === "processing") {
     return (
       <div className="min-h-screen bg-pitch-grid flex flex-col items-center justify-center px-6">
-        <div className="text-center animate-fade-in">
-          <div className="relative w-20 h-20 mx-auto mb-8">
-            <div className="w-20 h-20 rounded-full border-4 border-[#39FF14]/20 border-t-[#39FF14] animate-spin" />
-            <span className="absolute inset-0 flex items-center justify-center text-2xl">⚽</span>
-          </div>
-          <h2 className="font-display font-black text-3xl uppercase text-white mb-3">
-            Preparando tu perfil
-          </h2>
-          <p className="text-gray-400 text-sm">Personalizando tu experiencia en El Pitazo...</p>
+        <div className="text-center animate-fade-in max-w-sm">
+          {saveError ? (
+            <>
+              <div className="text-5xl mb-6">⚠️</div>
+              <h2 className="font-display font-black text-3xl uppercase text-white mb-3">
+                No pudimos guardar
+              </h2>
+              <p className="text-red-400 text-sm mb-6">{saveError}</p>
+              <button
+                onClick={() => saveOnboarding(answers)}
+                disabled={saving}
+                className="bg-[#39FF14] text-black font-bold uppercase px-6 py-3 rounded-xl disabled:opacity-50"
+              >
+                {saving ? "Reintentando…" : "Reintentar"}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="relative w-20 h-20 mx-auto mb-8">
+                <div className="w-20 h-20 rounded-full border-4 border-[#39FF14]/20 border-t-[#39FF14] animate-spin" />
+                <span className="absolute inset-0 flex items-center justify-center text-2xl">⚽</span>
+              </div>
+              <h2 className="font-display font-black text-3xl uppercase text-white mb-3">
+                Preparando tu perfil
+              </h2>
+              <p className="text-gray-400 text-sm">Personalizando tu experiencia en El Pitazo...</p>
+            </>
+          )}
         </div>
       </div>
     );

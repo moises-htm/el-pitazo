@@ -1,20 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
-
-function getUserId(req: NextApiRequest): string | null {
-  const auth = req.headers.authorization;
-  if (!auth?.startsWith("Bearer ")) return null;
-  try {
-    const payload = jwt.verify(auth.slice(7), JWT_SECRET) as { userId: string };
-    return payload.userId;
-  } catch {
-    return null;
-  }
-}
+import { getUserId } from "@/lib/server-auth";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {

@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
-import jwt from "jsonwebtoken";
+import { verifyToken } from "@/lib/server-auth";
 import { listTyping } from "@/lib/chat-typing";
-
-const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
 
 export const config = { api: { bodyParser: false } };
 
@@ -29,13 +27,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const tokenParam = req.query.token as string;
   if (!tokenParam) return res.status(401).end();
 
-  let userId: string;
-  try {
-    const payload = jwt.verify(tokenParam, JWT_SECRET) as { userId: string };
-    userId = payload.userId;
-  } catch {
-    return res.status(401).end();
-  }
+  const payload = verifyToken(tokenParam);
+  if (!payload) return res.status(401).end();
+  const userId = payload.userId;
 
   const roomId = req.query.roomId as string;
   if (!roomId) return res.status(400).end();

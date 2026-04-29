@@ -3,8 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "el-pitazo-dev-secret";
+import { JWT_SECRET } from "@/lib/server-auth";
 
 export default async function handler(
   req: NextApiRequest,
